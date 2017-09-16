@@ -2,7 +2,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 import           Data.Monoid (mappend)
 import           Hakyll
+import qualified Text.Pandoc.Options as PO
+import qualified Data.Set as Set
 
+myPandocCompiler :: Compiler (Item String)
+myPandocCompiler = pandocCompilerWith myReaderOptions myWriterOptions
+  where
+    myReaderOptions = defaultHakyllReaderOptions { PO.readerExtensions = myReaderExtensions }
+    myReaderExtensions = PO.Ext_tex_math_single_backslash `Set.insert` PO.readerExtensions defaultHakyllReaderOptions
+    myWriterOptions = defaultHakyllWriterOptions { PO.writerHTMLMathMethod = PO.MathML Nothing }
 
 --------------------------------------------------------------------------------
 main :: IO ()
@@ -17,13 +25,13 @@ main = hakyll $ do
 
     match (fromList ["about.rst", "contact.markdown"]) $ do
         route   $ setExtension "html"
-        compile $ pandocCompiler
+        compile $ myPandocCompiler
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
     match "posts/*" $ do
         route $ setExtension "html"
-        compile $ pandocCompiler
+        compile $ myPandocCompiler
             >>= loadAndApplyTemplate "templates/post.html"    postCtx
             >>= loadAndApplyTemplate "templates/default.html" postCtx
             >>= relativizeUrls
