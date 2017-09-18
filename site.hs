@@ -9,7 +9,10 @@ myPandocCompiler :: Compiler (Item String)
 myPandocCompiler = pandocCompilerWith myReaderOptions myWriterOptions
   where
     myReaderOptions = defaultHakyllReaderOptions { PO.readerExtensions = myReaderExtensions }
-    myReaderExtensions = PO.Ext_tex_math_single_backslash `Set.insert` PO.readerExtensions defaultHakyllReaderOptions
+    myReaderExtensions = Set.union (PO.readerExtensions defaultHakyllReaderOptions)
+                         $ Set.fromList [ PO.Ext_tex_math_single_backslash
+                                        , PO.Ext_east_asian_line_breaks
+                                        ]
     myWriterOptions = defaultHakyllWriterOptions { PO.writerHTMLMathMethod = PO.MathML Nothing }
 
 --------------------------------------------------------------------------------
