@@ -4,6 +4,7 @@ import           Data.Monoid (mappend)
 import           Hakyll
 import qualified Text.Pandoc.Options as PO
 import qualified Data.Set as Set
+import Control.Applicative (empty)
 
 myPandocCompiler :: Compiler (Item String)
 myPandocCompiler = pandocCompilerWith myReaderOptions myWriterOptions
@@ -27,11 +28,27 @@ main = hakyll $ do
         compile compressCssCompiler
 
 
-    match "posts/*" $ do
+    postIDs <- getMatches "posts/*"
+    let makeId pageNum = postIDs !! (pageNum - 1)
+        grouper items = return (map (:[]) items) -- one item per group
+    pag <- buildPaginateWith grouper "posts/*" makeId
+    paginateRules pag $ \pageNum pattern -> do
         route $ setExtension "html"
+        let pageTitle :: Int -> Compiler String
+            pageTitle n | 1 <= n && n <= length postIDs = do
+                            mtitle <- getMetadataField (makeId n) "title"
+                            case mtitle of
+                              Just title -> return title
+                              Nothing -> empty
+                        | otherwise = empty
+            ctx = mconcat [ field "previousPageTitle" (\_ -> pageTitle (pageNum - 1))
+                          , field "nextPageTitle" (\_ -> pageTitle (pageNum + 1))
+                          , paginateContext pag pageNum
+                          , postCtx
+                          ]
         compile $ myPandocCompiler
-            >>= loadAndApplyTemplate "templates/post.html"    postCtx
-            >>= loadAndApplyTemplate "templates/default.html" postCtx
+            >>= loadAndApplyTemplate "templates/post.html"    ctx
+            >>= loadAndApplyTemplate "templates/default.html" ctx
             >>= relativizeUrls
 
     match "index.html" $ do
