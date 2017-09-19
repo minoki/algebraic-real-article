@@ -1,10 +1,10 @@
 --------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
 import           Data.Monoid (mappend)
+import           Control.Monad (forM_)
 import           Hakyll
 import qualified Text.Pandoc.Options as PO
 import qualified Data.Set as Set
-import Control.Applicative (empty)
 
 myPandocCompiler :: Compiler (Item String)
 myPandocCompiler = pandocCompilerWith myReaderOptions myWriterOptions
@@ -28,28 +28,36 @@ main = hakyll $ do
         compile compressCssCompiler
 
 
-    postIDs <- getMatches "posts/*"
-    let makeId pageNum = postIDs !! (pageNum - 1)
-        grouper items = return (map (:[]) items) -- one item per group
-    pag <- buildPaginateWith grouper "posts/*" makeId
-    paginateRules pag $ \pageNum pattern -> do
-        route $ setExtension "html"
-        let pageTitle :: Int -> Compiler String
-            pageTitle n | 1 <= n && n <= length postIDs = do
-                            mtitle <- getMetadataField (makeId n) "title"
-                            case mtitle of
-                              Just title -> return title
-                              Nothing -> empty
-                        | otherwise = empty
-            ctx = mconcat [ field "previousPageTitle" (\_ -> pageTitle (pageNum - 1))
-                          , field "nextPageTitle" (\_ -> pageTitle (pageNum + 1))
-                          , paginateContext pag pageNum
-                          , postCtx
-                          ]
-        compile $ myPandocCompiler
-            >>= loadAndApplyTemplate "templates/post.html"    ctx
-            >>= loadAndApplyTemplate "templates/default.html" ctx
-            >>= relativizeUrls
+    postIDs <- sortChronological =<< getMatches "posts/*"
+    let nextPosts = tail $ map Just postIDs ++ [Nothing]
+        prevPosts = Nothing : map Just postIDs
+    forM_ (zip3 postIDs nextPosts prevPosts)
+      $ \(postID,mnextPost,mprevPost) -> create [postID] $ do
+      route $ setExtension "html"
+      let pageTitle, pageUrl :: Identifier -> Compiler String
+          pageTitle i = do
+            mtitle <- getMetadataField i "title"
+            case mtitle of
+              Just title -> return title
+              Nothing -> fail "no 'title' field"
+          pageUrl i = do
+            mfilePath <- getRoute i
+            case mfilePath of
+              Just filePath -> return (toUrl filePath)
+              Nothing -> fail "no route"
+          prevPageCtx = case mprevPost of
+                          Just i -> field "previousPageUrl"   (\_ -> pageUrl   i) `mappend`
+                                    field "previousPageTitle" (\_ -> pageTitle i)
+                          _ -> mempty
+          nextPageCtx = case mnextPost of
+                          Just i -> field "nextPageUrl"       (\_ -> pageUrl   i) `mappend`
+                                    field "nextPageTitle"     (\_ -> pageTitle i)
+                          _ -> mempty
+          ctx = prevPageCtx `mappend` nextPageCtx `mappend` postCtx
+      compile $ myPandocCompiler
+        >>= loadAndApplyTemplate "templates/post.html"    ctx
+        >>= loadAndApplyTemplate "templates/default.html" ctx
+        >>= relativizeUrls
 
     match "index.html" $ do
         route idRoute

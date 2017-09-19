@@ -7,10 +7,10 @@
 
 $body$
 
-$if(previousPageNum)$
+$if(previousPageUrl)$
 <a href="$previousPageUrl$">前$if(previousPageTitle)$：$previousPageTitle$$else$の記事$endif$</a>
 $endif$
 
-$if(nextPageNum)$
+$if(nextPageUrl)$
 <a href="$nextPageUrl$">次$if(nextPageTitle)$：$nextPageTitle$$else$の記事$endif$</a>
 $endif$
