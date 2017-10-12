@@ -1,3 +1,10 @@
+@import "https://static.miz-ar.info/fonts/FiraCode/fira_code.css";
+code.code-lig {
+  font-family: "Fira Code";
+  font-feature-settings: "calt" 1;
+  text-rendering: optimizeLegibility;
+}
+
 body {
     color: black;
     font-size: 16px;
@@ -53,4 +60,91 @@ div.info {
     color: #555;
     font-size: 14px;
     font-style: italic;
+}
+
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode, table.sourceCode pre
+   { margin: 0; padding: 0; border: 0; vertical-align: baseline; border: none; }
+td.lineNumbers { border-right: 1px solid #AAAAAA; text-align: right; color: #AAAAAA; padding-right: 5px; padding-left: 5px; }
+td.sourceCode { padding-left: 5px; }
+/* https://github.com/jgm/highlighting-kate/blob/master/Text/Highlighting/Kate/Format/HTML.hs */
+.sourceCode {
+    font-family: "Fira Code";
+}
+/* keyword */
+.sourceCode span.kw { color: #007020; font-weight: bold; }
+/* datatype */
+.sourceCode span.dt { color: #902000; }
+/* decval */
+.sourceCode span.dv { color: #40a070; }
+/* baseN */
+.sourceCode span.bn { color: #40a070; }
+/* float */
+.sourceCode span.fl { color: #40a070; }
+/* Char */
+.sourceCode span.ch { color: #4070a0; }
+/* String */
+.sourceCode span.st { color: #4070a0; }
+/* Comment */
+.sourceCode span.co { color: #60a0b0; font-style: italic; }
+/* Other */
+.sourceCode span.ot { color: #007020;
+  font-feature-settings: "calt" 1;
+  text-rendering: optimizeLegibility;
+}
+/* Alert */
+.sourceCode span.al { color: red; font-weight: bold; }
+/* Function */
+.sourceCode span.fu { color: #06287e; }
+/* RegionMarker */
+.sourceCode span.re { }
+/* Error */
+.sourceCode span.er { color: red; font-weight: bold; }
+
+div.theorem {
+  background-color: #fffffc;
+  border: 1px solid #bbbbff;
+  border-radius: 0.5em;
+  padding: 0.5em;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+div.theorem > p:first-child {
+  margin-top: 0;
+}
+div.theorem > p:last-child {
+  margin-bottom: 0;
+}
+/*
+div.theorem > p:first-child::before {
+  content: "定理．";
+  font-weight: bold;
+}
+*/
+
+div.proof {
+  background-color: #fffffc;
+  border: 1px solid #bbbbff;
+  border-radius: 0.5em;
+  padding: 0.5em;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+div.proof > p:first-child {
+  margin-top: 0;
+}
+div.proof > p:last-child {
+  margin-bottom: 0;
+}
+
+table {
+  border-collapse: collapse;
+}
+thead > tr > td, thead > tr > th {
+  border-bottom: 1px solid #888;
+}
+td, th {
+  border: 1px solid #ccc;
+  min-width: 2em;
+  padding-left: 0.2em;
+  padding-right: 0.2em;
 }
