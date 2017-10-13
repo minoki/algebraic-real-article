@@ -12,15 +12,15 @@ import           Data.Time.LocalTime
 import           Data.Time.Locale.Compat (TimeLocale, defaultTimeLocale)
 import           Data.Char (toUpper)
 
-myPandocCompiler :: Compiler (Item String)
-myPandocCompiler = pandocCompilerWith myReaderOptions myWriterOptions
+myPandocCompiler :: PO.HTMLMathMethod -> Compiler (Item String)
+myPandocCompiler mathMethod = pandocCompilerWith myReaderOptions myWriterOptions
   where
     myReaderOptions = defaultHakyllReaderOptions { PO.readerExtensions = myReaderExtensions }
     myReaderExtensions = Set.union (PO.readerExtensions defaultHakyllReaderOptions)
                          $ Set.fromList [ PO.Ext_tex_math_single_backslash
                                         , PO.Ext_east_asian_line_breaks
                                         ]
-    myWriterOptions = defaultHakyllWriterOptions { PO.writerHTMLMathMethod = PO.MathML Nothing }
+    myWriterOptions = defaultHakyllWriterOptions { PO.writerHTMLMathMethod = mathMethod }
 
 isPublishMode :: IO Bool
 isPublishMode = do
@@ -85,7 +85,7 @@ main = do
                                     field "nextPageTitle"     (\_ -> pageTitle i)
                           _ -> mempty
           ctx = prevPageCtx `mappend` nextPageCtx `mappend` postCtx'
-      compile $ myPandocCompiler
+      compile $ myPandocCompiler mathMethod
         >>= loadAndApplyTemplate "templates/post.html"    ctx
         >>= loadAndApplyTemplate "templates/default.html" ctx
         >>= relativizeUrls
