@@ -1,10 +1,11 @@
 --------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
 import           Data.Monoid (mappend)
-import           Control.Monad (forM_)
+import           Control.Monad (forM_,filterM)
 import           Hakyll
 import qualified Text.Pandoc.Options as PO
 import qualified Data.Set as Set
+import           System.Environment
 import           Data.Time.Format (formatTime)
 import           Data.Time.LocalTime
 import           Data.Time.Locale.Compat (TimeLocale, defaultTimeLocale)
@@ -19,9 +20,25 @@ myPandocCompiler = pandocCompilerWith myReaderOptions myWriterOptions
                                         ]
     myWriterOptions = defaultHakyllWriterOptions { PO.writerHTMLMathMethod = PO.MathML Nothing }
 
+isDraftMode :: IO Bool
+isDraftMode = do
+  args <- getArgs
+  return ("--draft" `elem` args)
+
+isPublishMode :: IO Bool
+isPublishMode = do
+  args <- getArgs
+  return ("--publish" `elem` args)
+
+isDraft :: MonadMetadata m => Identifier -> m Bool
+isDraft id = do
+  f <- getMetadataField id "draft"
+  return (f == Just "true")
+
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do
+  draftMode <- isDraftMode
   tz <- getCurrentTimeZone
   let postCtx' = postCtx tz
   hakyll $ do
@@ -33,8 +50,10 @@ main = do
         route   idRoute
         compile compressCssCompiler
 
+    let filterDraft | draftMode = return
+                    | not draftMode = filterM (\x -> not <$> isDraft x)
 
-    postIDs <- sortChronological =<< getMatches "posts/*"
+    postIDs <- sortChronological =<< filterDraft =<< getMatches "posts/*"
     let nextPosts = tail $ map Just postIDs ++ [Nothing]
         prevPosts = Nothing : map Just postIDs
     forM_ (zip3 postIDs nextPosts prevPosts)
