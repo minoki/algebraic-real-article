@@ -2,3 +2,5 @@
 _cache/
 stack.yaml
 _site/
+_cache.pub/
+_site.pub/
