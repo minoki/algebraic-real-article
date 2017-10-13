@@ -9,5 +9,7 @@ executable site
                   , hakyll == 4.9.*
                   , pandoc
                   , containers
+                  , time
+                  , time-locale-compat
   ghc-options:      -threaded -dynamic
   default-language: Haskell2010

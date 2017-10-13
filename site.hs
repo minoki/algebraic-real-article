@@ -5,6 +5,9 @@ import           Control.Monad (forM_)
 import           Hakyll
 import qualified Text.Pandoc.Options as PO
 import qualified Data.Set as Set
+import           Data.Time.Format (formatTime)
+import           Data.Time.LocalTime
+import           Data.Time.Locale.Compat (TimeLocale, defaultTimeLocale)
 
 myPandocCompiler :: Compiler (Item String)
 myPandocCompiler = pandocCompilerWith myReaderOptions myWriterOptions
@@ -18,7 +21,10 @@ myPandocCompiler = pandocCompilerWith myReaderOptions myWriterOptions
 
 --------------------------------------------------------------------------------
 main :: IO ()
-main = hakyll $ do
+main = do
+  tz <- getCurrentTimeZone
+  let postCtx' = postCtx tz
+  hakyll $ do
     match "images/*" $ do
         route   idRoute
         compile copyFileCompiler
@@ -53,7 +59,7 @@ main = hakyll $ do
                           Just i -> field "nextPageUrl"       (\_ -> pageUrl   i) `mappend`
                                     field "nextPageTitle"     (\_ -> pageTitle i)
                           _ -> mempty
-          ctx = prevPageCtx `mappend` nextPageCtx `mappend` postCtx
+          ctx = prevPageCtx `mappend` nextPageCtx `mappend` postCtx'
       compile $ myPandocCompiler
         >>= loadAndApplyTemplate "templates/post.html"    ctx
         >>= loadAndApplyTemplate "templates/default.html" ctx
@@ -64,7 +70,7 @@ main = hakyll $ do
         compile $ do
             posts <- chronological =<< loadAll "posts/*"
             let indexCtx =
-                    listField "posts" postCtx (return posts) `mappend`
+                    listField "posts" postCtx' (return posts) `mappend`
                     constField "title" "週刊 代数的実数を作る" `mappend`
                     defaultContext
 
@@ -77,8 +83,17 @@ main = hakyll $ do
 
 
 --------------------------------------------------------------------------------
-postCtx :: Context String
-postCtx =
-    dateField "date" "%Y年 %-m月 %-d日" `mappend`
-    modificationTimeField "modified" "%Y年 %-m月 %-d日" `mappend`
+postCtx :: TimeZone -> Context String
+postCtx tz =
+    dateField "date" "%Y年%-m月%-d日" `mappend`
+    localModificationTimeField tz "modified" "%Y年%-m月%-d日" `mappend`
     defaultContext
+
+localModificationTimeField :: TimeZone -> String -> String -> Context a
+localModificationTimeField = localModificationTimeFieldWith defaultTimeLocale
+
+localModificationTimeFieldWith :: TimeLocale -> TimeZone -> String -> String -> Context a
+localModificationTimeFieldWith locale tz key fmt = field key $ \i -> do
+    mtimeUTC <- getItemModificationTime $ itemIdentifier i
+    let mtimeLocal = utcToLocalTime tz mtimeUTC
+    return $ formatTime locale fmt mtimeLocal
