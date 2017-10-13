@@ -3,12 +3,14 @@
 import           Data.Monoid (mappend)
 import           Control.Monad (forM_,filterM)
 import           Hakyll
+import           Hakyll.Core.Configuration
 import qualified Text.Pandoc.Options as PO
 import qualified Data.Set as Set
 import           System.Environment
 import           Data.Time.Format (formatTime)
 import           Data.Time.LocalTime
 import           Data.Time.Locale.Compat (TimeLocale, defaultTimeLocale)
+import           Data.Char (toUpper)
 
 myPandocCompiler :: Compiler (Item String)
 myPandocCompiler = pandocCompilerWith myReaderOptions myWriterOptions
@@ -20,15 +22,10 @@ myPandocCompiler = pandocCompilerWith myReaderOptions myWriterOptions
                                         ]
     myWriterOptions = defaultHakyllWriterOptions { PO.writerHTMLMathMethod = PO.MathML Nothing }
 
-isDraftMode :: IO Bool
-isDraftMode = do
-  args <- getArgs
-  return ("--draft" `elem` args)
-
 isPublishMode :: IO Bool
 isPublishMode = do
-  args <- getArgs
-  return ("--publish" `elem` args)
+  mode <- getEnv "MODE"
+  return (map toUpper mode == "PUBLISH")
 
 isDraft :: MonadMetadata m => Identifier -> m Bool
 isDraft id = do
@@ -38,10 +35,19 @@ isDraft id = do
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do
-  draftMode <- isDraftMode
+  publishMode <- isPublishMode
   tz <- getCurrentTimeZone
   let postCtx' = postCtx tz
-  hakyll $ do
+      draftMode = not publishMode
+      mathMethod | publishMode = PO.KaTeX "" "" -- PO.KaTeX "https://static.miz-ar.info/katex-0.9.0-alpha/katex.min.js" "https://static.miz-ar.info/katex-0.9.0-alpha/katex.min.css"
+                 | draftMode = PO.MathML Nothing
+      conf | draftMode = Hakyll.Core.Configuration.defaultConfiguration
+           | publishMode = Hakyll.Core.Configuration.defaultConfiguration
+                           { destinationDirectory = "_site.pub"
+                           , storeDirectory = "_cache.pub"
+                           , tmpDirectory = "_cache.pub/tmp"
+                           }
+  hakyllWith conf $ do
     match "images/*" $ do
         route   idRoute
         compile copyFileCompiler
@@ -51,7 +57,7 @@ main = do
         compile compressCssCompiler
 
     let filterDraft | draftMode = return
-                    | not draftMode = filterM (\x -> not <$> isDraft x)
+                    | publishMode = filterM (\x -> not <$> isDraft x)
 
     postIDs <- sortChronological =<< filterDraft =<< getMatches "posts/*"
     let nextPosts = tail $ map Just postIDs ++ [Nothing]
