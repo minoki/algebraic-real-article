@@ -163,3 +163,5 @@ $ mkdir -p src/Numeric/AlgebraicReal
 4. 吉永正彦 著「周期と実数の0-認識問題 Kontsevich-Zagier の予想」数学書房、2016年
     * 「代数的実数よりも広くて、比較演算が決定可能な数のクラス」の候補である**周期**がテーマである。
     * 代数的実数や、計算可能実数の等号認識問題が計算不可能である件も扱っている。
+
+<SCRIPT charset="utf-8" type="text/javascript" src="https://ws-fe.amazon-adsystem.com/widgets/q?rt=tf_mfw&ServiceVersion=20070822&MarketPlace=JP&ID=V20070822%2FJP%2Fdpoppo-22%2F8001%2Fb934096f-3555-40d3-a67f-475c4819947a"> </SCRIPT><NOSCRIPT><A rel="nofollow" HREF="http://ws-fe.amazon-adsystem.com/widgets/q?rt=tf_mfw&ServiceVersion=20070822&MarketPlace=JP&ID=V20070822%2FJP%2Fdpoppo-22%2F8001%2Fb934096f-3555-40d3-a67f-475c4819947a&Operation=NoScript">Amazon.co.jp ウィジェット</A></NOSCRIPT>
