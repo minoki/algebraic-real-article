@@ -24,8 +24,8 @@ myPandocCompiler mathMethod = pandocCompilerWith myReaderOptions myWriterOptions
 
 isPublishMode :: IO Bool
 isPublishMode = do
-  mode <- getEnv "MODE"
-  return (map toUpper mode == "PUBLISH")
+  mode <- lookupEnv "MODE"
+  return ((map toUpper <$> mode) == Just "PUBLISH")
 
 isDraft :: MonadMetadata m => Identifier -> m Bool
 isDraft id = do
@@ -37,11 +37,19 @@ main :: IO ()
 main = do
   publishMode <- isPublishMode
   tz <- getCurrentTimeZone
-  let postCtx' = postCtx tz
-      draftMode = not publishMode
-      mathMethod | publishMode = PO.KaTeX "" "" -- PO.KaTeX "https://static.miz-ar.info/katex-0.9.0-alpha/katex.min.js" "https://static.miz-ar.info/katex-0.9.0-alpha/katex.min.css"
-                 | draftMode = PO.MathML Nothing
-      conf | draftMode = Hakyll.Core.Configuration.defaultConfiguration
+  let postCtx :: Context String
+      postCtx =
+        dateField "date" "%Y年%-m月%-d日" `mappend`
+        localModificationTimeField tz "modified" "%Y年%-m月%-d日" `mappend`
+        boolField "publish" (const publishMode) `mappend`
+        boolField "use-katex" (const publishMode) `mappend`
+        constField "katex-css" "https://static.miz-ar.info/katex-0.9.0-alpha/katex.min.css" `mappend`
+        constField "katex-js" "https://static.miz-ar.info/katex-0.9.0-alpha/katex.min.js" `mappend`
+        defaultContext
+
+      mathMethod | publishMode = PO.KaTeX "" ""
+                 | not publishMode = PO.MathML Nothing
+      conf | not publishMode = Hakyll.Core.Configuration.defaultConfiguration
            | publishMode = Hakyll.Core.Configuration.defaultConfiguration
                            { destinationDirectory = "_site.pub"
                            , storeDirectory = "_cache.pub"
@@ -56,8 +64,8 @@ main = do
         route   idRoute
         compile compressCssCompiler
 
-    let filterDraft | draftMode = return
-                    | publishMode = filterM (\x -> not <$> isDraft x)
+    let filterDraft | publishMode = filterM (\x -> not <$> isDraft x)
+                    | not publishMode = return
 
     postIDs <- sortChronological =<< filterDraft =<< getMatches "posts/*"
     let nextPosts = tail $ map Just postIDs ++ [Nothing]
@@ -84,7 +92,7 @@ main = do
                           Just i -> field "nextPageUrl"       (\_ -> pageUrl   i) `mappend`
                                     field "nextPageTitle"     (\_ -> pageTitle i)
                           _ -> mempty
-          ctx = prevPageCtx `mappend` nextPageCtx `mappend` postCtx'
+          ctx = prevPageCtx `mappend` nextPageCtx `mappend` postCtx
       compile $ myPandocCompiler mathMethod
         >>= loadAndApplyTemplate "templates/post.html"    ctx
         >>= loadAndApplyTemplate "templates/default.html" ctx
@@ -95,7 +103,7 @@ main = do
         compile $ do
             posts <- chronological =<< loadAll "posts/*"
             let indexCtx =
-                    listField "posts" postCtx' (return posts) `mappend`
+                    listField "posts" postCtx (return posts) `mappend`
                     constField "title" "週刊 代数的実数を作る" `mappend`
                     defaultContext
 
@@ -108,11 +116,6 @@ main = do
 
 
 --------------------------------------------------------------------------------
-postCtx :: TimeZone -> Context String
-postCtx tz =
-    dateField "date" "%Y年%-m月%-d日" `mappend`
-    localModificationTimeField tz "modified" "%Y年%-m月%-d日" `mappend`
-    defaultContext
 
 localModificationTimeField :: TimeZone -> String -> String -> Context a
 localModificationTimeField = localModificationTimeFieldWith defaultTimeLocale
