@@ -42,7 +42,7 @@ import qualified Data.Vector as V
 import Data.Vector ((!))
 
 -- 一変数多項式 (univariate polynomial)
-newtype UniPoly a = UniPoly (Vector a)
+newtype UniPoly a = UniPoly (V.Vector a)
   deriving (Eq,Show)
 
 -- 多項式としてのゼロ
