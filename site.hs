@@ -37,14 +37,16 @@ main :: IO ()
 main = do
   publishMode <- isPublishMode
   tz <- getCurrentTimeZone
-  let postCtx :: Context String
-      postCtx =
-        dateField "date" "%Y年%-m月%-d日" `mappend`
-        localModificationTimeField tz "modified" "%Y年%-m月%-d日" `mappend`
+  let commonCtx, postCtx :: Context String
+      commonCtx =
         boolField "publish" (const publishMode) `mappend`
         boolField "use-katex" (const publishMode) `mappend`
         constField "katex-css" "https://static.miz-ar.info/katex-0.9.0-alpha/katex.min.css" `mappend`
-        constField "katex-js" "https://static.miz-ar.info/katex-0.9.0-alpha/katex.min.js" `mappend`
+        constField "katex-js" "https://static.miz-ar.info/katex-0.9.0-alpha/katex.min.js"
+      postCtx =
+        dateField "date" "%Y年%-m月%-d日" `mappend`
+        localModificationTimeField tz "modified" "%Y年%-m月%-d日" `mappend`
+        commonCtx `mappend`
         defaultContext
 
       mathMethod | publishMode = PO.KaTeX "" ""
@@ -105,6 +107,7 @@ main = do
             let indexCtx =
                     listField "posts" postCtx (return posts) `mappend`
                     constField "title" "週刊 代数的実数を作る" `mappend`
+                    commonCtx `mappend`
                     defaultContext
 
             getResourceBody
