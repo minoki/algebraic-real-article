@@ -38,9 +38,10 @@ main = do
   publishMode <- isPublishMode
   tz <- getCurrentTimeZone
   let commonCtx, postCtx :: Context String
+      useKaTeX = False
       commonCtx =
         boolField "publish" (const publishMode) `mappend`
-        boolField "use-katex" (const publishMode) `mappend`
+        boolField "use-katex" (const useKaTeX) `mappend`
         constField "katex-css" "https://static.miz-ar.info/katex-0.9.0-alpha/katex.min.css" `mappend`
         constField "katex-js" "https://static.miz-ar.info/katex-0.9.0-alpha/katex.min.js"
       postCtx =
@@ -49,8 +50,8 @@ main = do
         commonCtx `mappend`
         defaultContext
 
-      mathMethod | publishMode = PO.KaTeX "" ""
-                 | not publishMode = PO.MathML Nothing
+      mathMethod | useKaTeX = PO.KaTeX "" ""
+                 | not useKaTeX = PO.MathML Nothing
       conf | not publishMode = Hakyll.Core.Configuration.defaultConfiguration
            | publishMode = Hakyll.Core.Configuration.defaultConfiguration
                            { destinationDirectory = "_site.pub"
