@@ -1,6 +1,7 @@
 ---
 title: "#2 実根の数え上げ"
 date: 2017-10-21
+description: スツルム列を用いて多項式の実根の数え上げを行う。
 ---
 \newcommand\Integer{\mathbb{Z}}
 \newcommand\Rational{\mathbb{Q}}
