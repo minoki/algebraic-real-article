@@ -11,5 +11,6 @@ executable site
                   , containers
                   , time
                   , time-locale-compat
+                  , network-uri
   ghc-options:      -threaded -dynamic
   default-language: Haskell2010

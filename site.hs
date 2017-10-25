@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 import           Data.Monoid (mappend)
 import           Control.Monad (forM_,filterM)
+import           Control.Applicative
 import           Hakyll
 import           Hakyll.Core.Configuration
 import qualified Text.Pandoc.Options as PO
@@ -11,6 +12,7 @@ import           Data.Time.Format (formatTime)
 import           Data.Time.LocalTime
 import           Data.Time.Locale.Compat (TimeLocale, defaultTimeLocale)
 import           Data.Char (toUpper)
+import qualified Network.URI as URI
 
 myPandocCompiler :: PO.HTMLMathMethod -> Compiler (Item String)
 myPandocCompiler mathMethod = pandocCompilerWith myReaderOptions myWriterOptions
@@ -32,6 +34,21 @@ isDraft id = do
   f <- getMetadataField id "draft"
   return (f == Just "true")
 
+encodeURIComponent :: [String] -> Item String -> Compiler String
+encodeURIComponent args _item = return $ URI.escapeURIString URI.isUnreserved (concat args)
+
+siteRoot :: String
+siteRoot = "https://miz-ar.info/math/algebraic-real"
+
+absoluteUrl :: Item a -> Compiler String
+absoluteUrl item = do
+  url <- maybe empty toUrl <$> getRoute (itemIdentifier item)
+  return (siteRoot ++ stripIndexHtml url)
+  where
+    stripIndexHtml "/index.html" = "/"
+    stripIndexHtml [] = []
+    stripIndexHtml (x:xs) = x : stripIndexHtml xs
+
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do
@@ -43,7 +60,9 @@ main = do
         boolField "publish" (const publishMode) `mappend`
         boolField "use-katex" (const useKaTeX) `mappend`
         constField "katex-css" "https://static.miz-ar.info/katex-0.9.0-alpha/katex.min.css" `mappend`
-        constField "katex-js" "https://static.miz-ar.info/katex-0.9.0-alpha/katex.min.js"
+        constField "katex-js" "https://static.miz-ar.info/katex-0.9.0-alpha/katex.min.js" `mappend`
+        functionField "encodeURIComponent" encodeURIComponent `mappend`
+        field "absoluteUrl" absoluteUrl
       postCtx =
         dateField "date" "%Y年%-m月%-d日" `mappend`
         localModificationTimeField tz "modified" "%Y年%-m月%-d日" `mappend`
