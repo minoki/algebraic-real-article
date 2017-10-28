@@ -55,7 +55,7 @@ main = do
   publishMode <- isPublishMode
   tz <- getCurrentTimeZone
   let commonCtx, postCtx :: Context String
-      useKaTeX = False
+      useKaTeX = publishMode
       commonCtx =
         boolField "publish" (const publishMode) `mappend`
         boolField "use-katex" (const useKaTeX) `mappend`
