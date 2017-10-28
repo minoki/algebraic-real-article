@@ -16,6 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Numeric.AlgebraicReal.UniPoly
+                     , Numeric.AlgebraicReal.AlgReal
   build-depends:       base >= 4.7 && < 5
                      , vector
   default-language:    Haskell2010
