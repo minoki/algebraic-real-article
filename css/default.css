@@ -156,3 +156,11 @@ td, th {
   vertical-align: middle;
   display: inline-block;
 }
+
+pre {
+  background-color: #fcffff;
+  border-left: 2px solid #0cc;
+  padding-left: 0.5em;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
