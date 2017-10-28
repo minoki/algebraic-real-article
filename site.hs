@@ -49,6 +49,15 @@ absoluteUrl item = do
     stripIndexHtml [] = []
     stripIndexHtml (x:xs) = x : stripIndexHtml xs
 
+myFeedConfiguration :: FeedConfiguration
+myFeedConfiguration = FeedConfiguration
+  { feedTitle = "週刊 代数的実数を作る"
+  , feedDescription = "代数的実数をプログラミング言語上で実装します。"
+  , feedAuthorName = "ARATA Mizuki"
+  , feedAuthorEmail = ""
+  , feedRoot = "https://miz-ar.info/math/algebraic-real"
+  }
+
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do
@@ -116,6 +125,7 @@ main = do
                           _ -> mempty
           ctx = prevPageCtx `mappend` nextPageCtx `mappend` postCtx
       compile $ myPandocCompiler mathMethod
+        >>= saveSnapshot "content"
         >>= loadAndApplyTemplate "templates/post.html"    ctx
         >>= loadAndApplyTemplate "templates/default.html" ctx
         >>= relativizeUrls
@@ -134,6 +144,13 @@ main = do
                 >>= applyAsTemplate indexCtx
                 >>= loadAndApplyTemplate "templates/default.html" indexCtx
                 >>= relativizeUrls
+
+    create ["feed.xml"] $ do
+        route idRoute
+        compile $ do
+            let feedCtx = bodyField "description" `mappend` postCtx
+            posts <- fmap (take 10) . recentFirst =<< loadAllSnapshots "posts/*" "content"
+            renderAtom myFeedConfiguration feedCtx posts
 
     match "templates/*" $ compile templateBodyCompiler
 
