@@ -75,10 +75,10 @@
         </div>
 
         $if(use-katex)$<script>
-            window.addEventListener("DOMContentLoaded", () => {
-                for (let e of document.getElementsByClassName("math")) {
+            window.addEventListener("DOMContentLoaded", function() {
+                Array.prototype.forEach.call(document.getElementsByClassName("math"), function(e) {
                     katex.default.render(e.firstChild.data, e, {displayMode: e.classList.contains("display")});
-                }
+                });
             }, false);
         </script>$endif$
     </body>
