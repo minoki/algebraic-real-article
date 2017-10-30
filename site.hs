@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
-import           Data.Monoid (mappend)
+import           Data.Monoid (mappend,mconcat)
+import           Data.Maybe (catMaybes)
 import           Control.Monad (forM_,filterM)
 import           Control.Applicative
 import           Hakyll
@@ -65,6 +66,30 @@ makeExcerptField item = case splitAt 80 $ map replaceLineFeed $ stripTags $ item
   where replaceLineFeed '\n' = ' '
         replaceLineFeed x = x
 
+makeSeries :: [Identifier] -> (Context String -> Rules ()) -> Rules ()
+makeSeries postIDs rule = do
+  let nextPosts = tail $ map Just postIDs ++ [Nothing] :: [Maybe Identifier]
+      prevPosts = Nothing : map Just postIDs           :: [Maybe Identifier]
+  forM_ (zip3 postIDs nextPosts prevPosts) $ \(postID,mnextPost,mprevPost) -> create [postID] $ do
+      let siblingCtx = mconcat $ catMaybes [(field "previousPageUrl"   . pageUrlOf)   <$> mprevPost
+                                           ,(field "previousPageTitle" . pageTitleOf) <$> mprevPost
+                                           ,(field "nextPageUrl"       . pageUrlOf)   <$> mnextPost
+                                           ,(field "nextPageTitle"     . pageTitleOf) <$> mnextPost
+                                           ]
+      rule siblingCtx
+        where
+          pageTitleOf, pageUrlOf :: Identifier -> Item a -> Compiler String
+          pageTitleOf i _item = do
+            mtitle <- getMetadataField i "title"
+            case mtitle of
+              Just title -> return title
+              Nothing -> fail "no 'title' field"
+          pageUrlOf i _item = do
+            mfilePath <- getRoute i
+            case mfilePath of
+              Just filePath -> return (toUrl filePath)
+              Nothing -> fail "no route"
+
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do
@@ -106,31 +131,9 @@ main = do
                     | not publishMode = return
 
     postIDs <- sortChronological =<< filterDraft =<< getMatches "posts/*"
-    let nextPosts = tail $ map Just postIDs ++ [Nothing]
-        prevPosts = Nothing : map Just postIDs
-    forM_ (zip3 postIDs nextPosts prevPosts)
-      $ \(postID,mnextPost,mprevPost) -> create [postID] $ do
+    makeSeries postIDs $ \siblingCtx -> do
       route $ setExtension "html"
-      let pageTitle, pageUrl :: Identifier -> Compiler String
-          pageTitle i = do
-            mtitle <- getMetadataField i "title"
-            case mtitle of
-              Just title -> return title
-              Nothing -> fail "no 'title' field"
-          pageUrl i = do
-            mfilePath <- getRoute i
-            case mfilePath of
-              Just filePath -> return (toUrl filePath)
-              Nothing -> fail "no route"
-          prevPageCtx = case mprevPost of
-                          Just i -> field "previousPageUrl"   (\_ -> pageUrl   i) `mappend`
-                                    field "previousPageTitle" (\_ -> pageTitle i)
-                          _ -> mempty
-          nextPageCtx = case mnextPost of
-                          Just i -> field "nextPageUrl"       (\_ -> pageUrl   i) `mappend`
-                                    field "nextPageTitle"     (\_ -> pageTitle i)
-                          _ -> mempty
-          ctx = prevPageCtx `mappend` nextPageCtx `mappend` postCtx
+      let ctx = siblingCtx `mappend` postCtx
       compile $ myPandocCompiler mathMethod
         >>= saveSnapshot "content"
         >>= \item -> return item
