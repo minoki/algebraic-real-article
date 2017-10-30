@@ -58,6 +58,13 @@ myFeedConfiguration = FeedConfiguration
   , feedRoot = "https://miz-ar.info/math/algebraic-real"
   }
 
+makeExcerptField :: Item String -> Context String
+makeExcerptField item = case splitAt 80 $ map replaceLineFeed $ stripTags $ itemBody item of
+  (ex,[]) -> constField "excerpt" ex
+  (ex,_rest) -> constField "excerpt" (ex ++ "\x2026") {- U+2026 HORIZONTAL ELLIPSIS -}
+  where replaceLineFeed '\n' = ' '
+        replaceLineFeed x = x
+
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do
@@ -126,8 +133,9 @@ main = do
           ctx = prevPageCtx `mappend` nextPageCtx `mappend` postCtx
       compile $ myPandocCompiler mathMethod
         >>= saveSnapshot "content"
+        >>= \item -> return item
         >>= loadAndApplyTemplate "templates/post.html"    ctx
-        >>= loadAndApplyTemplate "templates/default.html" ctx
+        >>= loadAndApplyTemplate "templates/default.html" (ctx `mappend` makeExcerptField item)
         >>= relativizeUrls
 
     match "index.html" $ do
