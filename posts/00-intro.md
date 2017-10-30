@@ -1,7 +1,6 @@
 ---
 title: "#0 イントロダクション"
 date: 2017-10-14
-description: 計算機上で取り扱える実数の話と、実装言語についての基本的な方針を述べる。
 ---
 \newcommand\Integer{\mathbb{Z}}
 \newcommand\Rational{\mathbb{Q}}

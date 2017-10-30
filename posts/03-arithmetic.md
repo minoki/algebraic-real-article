@@ -1,7 +1,6 @@
 ---
 title: "#3 代数的数の演算と終結式"
 date: 2017-10-28
-description: 代数的数の四則演算のために、終結式を実装する。
 ---
 \providecommand\Syl{\mathrm{Syl}}
 \providecommand\resultant{\mathrm{res}}
