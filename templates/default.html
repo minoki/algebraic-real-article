@@ -5,7 +5,7 @@
         <meta property="og:type" content="article" />
         <meta property="og:title" content="週刊 代数的実数を作る$if(toppage)$$else$ - $title$$endif$" />
         <meta property="og:locale" content="ja_JP" />
-        $if(excerpt)$<meta name="og:description" content="$excerpt$" />$endif$
+        $if(excerpt)$<meta name="og:description" content="$excerpt$" />$else$$if(description)$<meta name="og:description" content="$description$" />$endif$$endif$
         <meta name="twitter:site" content="@mod_poppo" />
         <link rel="alternate" type="application/atom+xml" href="/feed.xml" />
         $if(previousPageUrl)$<link rel="prev" href="$previousPageUrl$" />$endif$
