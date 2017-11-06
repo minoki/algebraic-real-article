@@ -149,8 +149,22 @@ td, th {
 
 .share-button-container {
   line-height: 20px;
+  list-style-type: none;
+  padding-left: 0;
 }
-.share-button-container > * {
+.share-button-container > li {
+  display: inline-block;
+}
+.share-button-container > li#tw-button-container {
+  min-width: 75px;
+}
+.share-button-container > li#fb-button-container {
+  min-width: 75px;
+}
+.share-button-container > li#hb-button-container {
+  min-width: 50px;
+}
+.share-button-container > * > * {
   vertical-align: middle;
   display: inline-block;
   height: 20px;
