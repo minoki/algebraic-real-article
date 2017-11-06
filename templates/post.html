@@ -7,10 +7,8 @@
 
 $body$
 
-$if(previousPageUrl)$
-<a href="$previousPageUrl$">前$if(previousPageTitle)$：$previousPageTitle$$else$の記事$endif$</a>
-$endif$
-
-$if(nextPageUrl)$
-<a href="$nextPageUrl$">次$if(nextPageTitle)$：$nextPageTitle$$else$の記事$endif$</a>
-$endif$
+<ul class="navi">
+$if(previousPageUrl)$<li class="prev"><a href="$previousPageUrl$">前$if(previousPageTitle)$：$previousPageTitle$$else$の記事$endif$</a></li>$endif$<!--
+--><li><a href="/">目次</a></li><!--
+-->$if(nextPageUrl)$<li class="next"><a href="$nextPageUrl$">次$if(nextPageTitle)$：$nextPageTitle$$else$の記事$endif$</a></li>$endif$
+</ul>

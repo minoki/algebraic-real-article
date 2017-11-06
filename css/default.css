@@ -193,3 +193,30 @@ pre {
   padding-bottom: 0.5em;
   white-space: pre-wrap;
 }
+
+ul.navi {
+  list-style-type: none;
+  padding-left: 0;
+  display: flex;
+  justify-content: center;
+}
+ul.navi > li {
+  display: inline-block;
+}
+ul.navi > li > a {
+  padding: 2px 5px;
+  text-decoration: none;
+  display: inline-block;
+  border: 1px solid currentcolor;
+}
+ul.navi > li > a:hover {
+  text-decoration: underline;
+}
+ul.navi > li.prev > a {
+  border-radius: 5px 0 0 5px;
+  padding-left: 8px;
+}
+ul.navi > li.next > a {
+  border-radius: 0 5px 5px 0;
+  padding-right: 8px;
+}
