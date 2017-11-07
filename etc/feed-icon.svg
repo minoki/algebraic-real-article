@@ -26,8 +26,8 @@
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:zoom="14.06"
-     inkscape:cx="7.1428571"
-     inkscape:cy="6.4069264"
+     inkscape:cx="6.3960577"
+     inkscape:cy="14.941777"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -57,37 +57,36 @@
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1"
-     transform="translate(0,-1032.3622)">
+     id="layer1">
     <circle
        style="opacity:1;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        id="path4684"
        cx="3.0583215"
-       cy="1049.3038"
+       cy="16.94165"
        r="3.0583215" />
     <path
-       style="opacity:1;fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:3.5999999;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       style="opacity:1;fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:3.5999999;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        id="path4686"
        sodipodi:type="arc"
        sodipodi:cx="-1.277223e-07"
-       sodipodi:cy="1052.3622"
+       sodipodi:cy="20"
        sodipodi:rx="11.652551"
        sodipodi:ry="11.652551"
        sodipodi:start="4.712389"
        sodipodi:end="0"
-       d="M 1.0084609e-7,1040.7096 A 11.652551,11.652551 0 0 1 11.652551,1052.3622"
+       d="M 1.0084609e-7,8.3474493 A 11.652551,11.652551 0 0 1 11.652551,20"
        sodipodi:open="true" />
     <path
        sodipodi:open="true"
-       d="M 8.313564e-8,1034.1668 A 18.195393,18.195393 0 0 1 18.195392,1052.3622"
+       d="M 8.313564e-8,1.8046074 A 18.195393,18.195393 0 0 1 18.195392,20"
        sodipodi:end="0"
        sodipodi:start="4.712389"
        sodipodi:ry="18.195393"
        sodipodi:rx="18.195393"
-       sodipodi:cy="1052.3622"
+       sodipodi:cy="20"
        sodipodi:cx="-2.7377263e-07"
        sodipodi:type="arc"
        id="path4688"
-       style="opacity:1;fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:3.6;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+       style="opacity:1;fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:3.5999999;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
   </g>
 </svg>

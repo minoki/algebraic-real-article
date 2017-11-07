@@ -1,4 +1,3 @@
-@import "https://static.miz-ar.info/fonts/FiraCode/fira_code.css";
 code.code-lig {
   font-family: "Fira Code";
   font-feature-settings: "calt" 1;
@@ -158,8 +157,29 @@ td, th {
 .share-button-container > li#tw-button-container {
   min-width: 75px;
 }
+.share-button-container > li#tw-button-container > a {
+  color: white;
+  background-color: #1B95E0;
+  border-radius: 3px;
+  text-decoration: none;
+  font-size: 11px;
+  padding: 0 8px 0 23px;
+}
 .share-button-container > li#fb-button-container {
-  min-width: 75px;
+  min-width: 72px;
+}
+.share-button-container > li#fb-button-container > div:not([fb-xfbml-state='rendered']) {
+  background-color: #4267B2;
+  border-radius: 3px;
+}
+.share-button-container > li#fb-button-container > div:not([fb-xfbml-state='rendered']) > a {
+  color: white;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: bold;
+  vertical-align: top;
+  margin-left: 23px;
+  margin-right: 15px;
 }
 .share-button-container > li#hb-button-container {
   min-width: 50px;
@@ -175,12 +195,12 @@ td, th {
   text-decoration: none;
   color: white;
   background-color: #bb0;
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACvUlEQVRYhcWXTUhUURiG3+9KRZYRmbt2RWNpYUgrdVOQi2jZwqJFEIQEJUVEEIVB1KJMWkQtihb9rqNNUVGZIS3Syn7sZxEJopYaVmSDT4uZicv1nDt3GsMXZjHffc97n/PdO4dvDJiQNC5pVNKIpLfZT6+kh2Y2qP8p4jUJvAROA2tnAiCqV8B+oGymAHL6CrQCi2YKIAyyBwiKAegCeoFPQPofQTqApdPRjTlANdAEnAfeFQAxBmwuGsIBVQO0AYMJQU5RzCOJASkFWoDPCSCuALOmHSIEchz4lQfiVhIIA1olfZc0IKlP0mszG0sAUiXpmqRVMbarkraZ2WRcUFRp4ClwDFiZB2IucCFPJ9ry7SSfHgObAIvJOEDm2PZpSzEAOT0B1sTkNMdAjOI7JwoAgMzjOQqUeLIOxax9hKuLBQLkdBdY6IG4GLNue9RvwHpJ8yUtk7Ra0jpJS3ytDum5pEYzG4gAlErqklTtWDMkKWVmI95UwIA64DLwO08nelydAKrwnxNHEmzub1AKuJ3gcUx5J4ATHv8XCpknsh3ZHbMjyBxm0XXzgH6Pf19igFBgIzDuCUwDNY41ez3+3oIBQhATntBOIj+zbBeGPP7aaPgKoB14QOa5HwYWOyBaPIEAGx3+do/3ZNi0A/cbPwzURQINuOMJ7XAA1Hq83TlDPfGj2DCRTgCVMWsqHRAfHL5JoCKQdFCS82jNqlxSc7hgZm8k3fD4tzpq9xw1k9QQSKpzXIyq3lE75/FucNTue7xVgaQko9NsR61DUr+jXsvUg+aFJzcVSOpJAPAsWjAz5N5ZiaToIPNekmsqSgWSzuS5+YT87e721JeHv5jZT2VGvqjKAzO7LumsJygtaaeZ9Xmuf/TUKxw115xZFmQJd0lqktQp6Ycyf9VvSmows0uem/hCJWmBo/bNBfAHKmI8FDhvya0AAAAASUVORK5CYII=");
+  background-image: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgaGVpZ2h0PSIyMCIgd2lkdGg9IjIwIiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAgMCAyMCAyMCI+PGNpcmNsZSBjeD0iMyIgY3k9IjE3IiByPSIzIiBmaWxsPSIjZmZmIi8+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMuNiIgZD0ibTAgOC40YTExLjYgMTEuNiAwIDAgMSAxMS42IDExLjZNMCAxLjhhMTguMiAxOC4yIDAgMCAxIDE4LjIgMTguMiIvPjwvc3ZnPgo=");
   background-repeat: no-repeat;
   background-position: 5px 50%;
   background-size: 11px;
   font-family: sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   border-radius: 3px;
   height: 20px;
 }

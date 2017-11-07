@@ -25,6 +25,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>週刊 代数的実数を作る$if(toppage)$$else$ - $title$$endif$</title>
         <link rel="stylesheet" href="/css/default.css" />
+        <link rel="stylesheet" href="https://static.miz-ar.info/fonts/FiraCode/fira_code.css" />
         $if(use-katex)$<link rel="stylesheet" href="$katex-css$" />
         <script src="$katex-js$" defer></script>$endif$
         <script>window.twttr = (function(d, s, id) {
@@ -62,10 +63,10 @@
         <div id="content">
             <h1>$title$</h1>
             <ul class="share-button-container">
-                <li id="tw-button-container"><a class="twitter-share-button" href="https://twitter.com/intent/tweet?via=mod_poppo">Tweet</a></li>
+                <li id="tw-button-container"><a class="twitter-share-button" href="https://twitter.com/intent/tweet?via=mod_poppo">ツイート</a></li>
                 <li id="fb-button-container"><div class="fb-share-button" data-href="$absoluteUrl$" data-layout="button_count" data-size="small" data-mobile-iframe="true"><a class="fb-xfbml-parse-ignore" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fmiz-ar.info%2Fmath%2Falgebraic-real%2F&amp;src=sdkpreparse">シェア</a></div></li>
                 <li id="hb-button-container"><a href="http://b.hatena.ne.jp/entry/" class="hatena-bookmark-button" data-hatena-bookmark-layout="basic-counter" title="このエントリーをはてなブックマークに追加"><img src="https://b.st-hatena.com/images/entry-button/button-only@2x.png" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="https://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script></li>
-                <li><a href="/feed.xml" class="feed-button">Feed</a></li>
+                <li><a rel="alternate" type="application/atom+xml" href="/feed.xml" class="feed-button">Feed</a></li>
                 <li><a href="https://cloud.feedly.com/#subscription/feed/https://miz-ar.info/math/algebraic-real/feed.xml" target="blank"><img id="feedlyFollow" src="https://s3.feedly.com/img/follows/feedly-follow-rectangle-flat-small_2x.png" alt="follow us in feedly" width="66" height="20"></a></li>
             </ul>
             $body$
