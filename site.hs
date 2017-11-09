@@ -6,7 +6,8 @@ import           Control.Monad (forM_,filterM)
 import           Control.Applicative
 import           Hakyll
 import           Hakyll.Core.Configuration
-import qualified Text.Pandoc.Options as PO
+import qualified Text.Pandoc as P
+import           Text.Pandoc.XML (escapeStringForXML)
 import qualified Data.Set as Set
 import           System.Environment
 import           Data.Time.Format (formatTime)
@@ -14,16 +15,26 @@ import           Data.Time.LocalTime
 import           Data.Time.Locale.Compat (TimeLocale, defaultTimeLocale)
 import           Data.Char (toUpper)
 import qualified Network.URI as URI
+import qualified PandocUtil
 
-myPandocCompiler :: PO.HTMLMathMethod -> Compiler (Item String)
-myPandocCompiler mathMethod = pandocCompilerWith myReaderOptions myWriterOptions
+makeSimpleRuby :: String -> String -> P.Inline
+makeSimpleRuby base read = P.RawInline (P.Format "html")
+                           ("<ruby>" ++ escapeStringForXML base ++ "<rp>(</rp><rt>" ++ escapeStringForXML read ++ "</rt><rp>)</rp></ruby>")
+
+myPandocCompiler :: P.HTMLMathMethod -> Compiler (Item String)
+myPandocCompiler mathMethod = pandocCompilerWithTransform myReaderOptions myWriterOptions myTransform
   where
-    myReaderOptions = defaultHakyllReaderOptions { PO.readerExtensions = myReaderExtensions }
-    myReaderExtensions = Set.union (PO.readerExtensions defaultHakyllReaderOptions)
-                         $ Set.fromList [ PO.Ext_tex_math_single_backslash
-                                        , PO.Ext_east_asian_line_breaks
+    myReaderOptions = defaultHakyllReaderOptions { P.readerExtensions = myReaderExtensions }
+    myReaderExtensions = Set.union (P.readerExtensions defaultHakyllReaderOptions)
+                         $ Set.fromList [ P.Ext_tex_math_single_backslash
+                                        , P.Ext_east_asian_line_breaks
                                         ]
-    myWriterOptions = defaultHakyllWriterOptions { PO.writerHTMLMathMethod = mathMethod }
+    myWriterOptions = defaultHakyllWriterOptions { P.writerHTMLMathMethod = mathMethod }
+    myTransform :: P.Pandoc -> P.Pandoc
+    myTransform = PandocUtil.walkInlinesPandoc transformInline
+    transformInline :: P.Inline -> [P.Inline]
+    transformInline (P.Str s) = PandocUtil.transformRubyInString makeSimpleRuby s
+    transformInline x = [x]
 
 isPublishMode :: IO Bool
 isPublishMode = do
@@ -110,8 +121,8 @@ main = do
         commonCtx `mappend`
         defaultContext
 
-      mathMethod | useKaTeX = PO.KaTeX "" ""
-                 | not useKaTeX = PO.MathML Nothing
+      mathMethod | useKaTeX = P.KaTeX "" ""
+                 | not useKaTeX = P.MathML Nothing
       conf | not publishMode = Hakyll.Core.Configuration.defaultConfiguration
            | publishMode = Hakyll.Core.Configuration.defaultConfiguration
                            { destinationDirectory = "_site.pub"

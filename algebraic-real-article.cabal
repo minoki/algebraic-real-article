@@ -5,9 +5,11 @@ cabal-version:      >= 1.10
 
 executable site
   main-is:          site.hs
+  other-modules:    PandocUtil
   build-depends:    base == 4.*
                   , hakyll == 4.9.*
                   , pandoc
+                  , pandoc-types
                   , containers
                   , time
                   , time-locale-compat
