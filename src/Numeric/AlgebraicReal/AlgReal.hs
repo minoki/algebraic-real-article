@@ -1,6 +1,8 @@
 {-# LANGUAGE BangPatterns #-}
 module Numeric.AlgebraicReal.AlgReal where
 import Numeric.AlgebraicReal.UniPoly
+import Numeric.AlgebraicReal.Interval
+import Numeric.AlgebraicReal.CReal
 import qualified Data.Vector as V
 import Data.List
 
@@ -68,39 +70,34 @@ countRealRootsBetweenX :: (Ord a, Fractional a) => ExtReal a -> ExtReal a -> Uni
 countRealRootsBetweenX a b f = varianceAtX a s - varianceAtX b s
   where s = negativePRS f (diffP f)
 
-intervalsWithSturmSeq :: (Ord a, Fractional a) => [UniPoly a] -> a -> a -> [(a,a)]
-intervalsWithSturmSeq seq a b = (a,b) : ivs a b
-  where
-    i = varianceAt a seq  -- 点 a での符号の変化の数
-    ivs a b | i == j = (c,b) : ivs c b
-            | i /= j = (a,c) : ivs a c
-      where c = (a + b) / 2
-            j = varianceAt c seq
-
 -- | 代数的実数を表す型
 data AlgReal = FromRat !Rational
-             | AlgReal !(UniPoly Rational) !Rational !Rational
+             | AlgReal !(UniPoly Rational) !Int !Rational !Rational
   deriving (Show)
 
 -- | 定義多項式
 definingPolynomial :: AlgReal -> UniPoly Rational
 definingPolynomial (FromRat x) = ind - constP x
-definingPolynomial (AlgReal p _ _) = p
+definingPolynomial (AlgReal p _ _ _) = p
 
 -- | 実根の分離区間
 isolatingInterval :: AlgReal -> (Rational, Rational)
 isolatingInterval (FromRat x) = (x - 1, x + 1)
-isolatingInterval (AlgReal _ x y) = (x, y)
+isolatingInterval (AlgReal _ _ x y) = (x, y)
 
--- | 定義多項式のスツルム列
-sturmSeq :: AlgReal -> [UniPoly Rational]
-sturmSeq x = negativePRS f (diffP f)
-  where f = definingPolynomial x
+-- s: この代数的実数における f' の符号（正なら区間 (a,b) において f は負から正に変わり、負なら区間 (a,b) において f は正から負に変わる）
+intervalsWithSign :: UniPoly Rational -> Int -> Rational -> Rational -> [Interval]
+intervalsWithSign !f !s !a !b = Iv a b : ivs a b
+  where
+    ivs !a !b | signAt c f == 0 = repeat (Iv c c)
+              | s * signAt c f < 0 = Iv c b : ivs c b
+              | s * signAt c f > 0 = Iv a c : ivs a c
+      where c = (a + b) / 2
 
 -- | 近似する区間の列
-intervals :: AlgReal -> [(Rational,Rational)]
-intervals (FromRat x) = repeat (x,x)
-intervals x@(AlgReal _ a b) = intervalsWithSturmSeq (sturmSeq x) a b
+intervals :: AlgReal -> [Interval]
+intervals (FromRat x) = repeat (Iv x x)
+intervals (AlgReal f s a b) = intervalsWithSign f s a b
 
 -- | 与えられた定義多項式と、分離区間 (a,b] から、代数的実数を構築する。
 mkAlgReal :: UniPoly Rational -> Rational -> Rational -> AlgReal
@@ -115,12 +112,17 @@ mkAlgReal f a b
   | valueAt b' f' == 0 = FromRat b'
 
   -- 定数項の 0 を取り除き、また、区間の符号が確定したものをデータ構築子として使う
-  | otherwise = AlgReal f' a' b'
+  | otherwise = AlgReal f' s a' b'
   where nonZeroPart xs | V.head xs == 0 = nonZeroPart (V.tail xs)
                        | otherwise = xs
         f' = UniPoly $ nonZeroPart (coeff f)
-        seq = negativePRS f' (diffP f')
-        Just (a',b') = find (\(x,y) -> 0 < x || y < 0) (intervalsWithSturmSeq seq a b)
+        s | signAt b f' > 0 = 1
+          | signAt b f' < 0 = -1
+          | otherwise = signAt b (diffP f')
+        Just (Iv a' b') = find (\(Iv x y) -> 0 < x || y < 0) (intervalsWithSign f' s a b)
+
+algRealToCReal :: AlgReal -> CReal
+algRealToCReal x = CReal (intervals x)
 
 rootBound :: (Ord a, Fractional a) => UniPoly a -> a
 rootBound f | f == 0 = error "rootBound: polynomial is zero"
@@ -214,7 +216,7 @@ instance Ord AlgReal where
     | countRealRootsBetween a'' b'' g == 1 = EQ -- 等しいかどうか？
 
     -- x と y が等しくないことが確定した場合、縮小する区間の列を使って比較する（計算可能実数みたいな感じ）
-    | otherwise = compareIntervals (intervals x) (intervals y)
+    | otherwise = unsafeCompareCReal (algRealToCReal x) (algRealToCReal y)
 
     where f = definingPolynomial x       -- x の定義多項式
           (a,b) = isolatingInterval x    -- x の区間
@@ -223,11 +225,3 @@ instance Ord AlgReal where
           g = gcdP f f'
           a'' = max a a'  -- x の区間と y の区間の共通部分の、下限
           b'' = min b b'  -- 同、上限
-
-          -- 縮小する区間の列が与えられた時、それらの大小を比較する（収束先が異なることが前提）
-          compareIntervals :: (Ord a) => [(a,a)] -> [(a,a)] -> Ordering
-          compareIntervals ((a,b):xs) ((a',b'):ys)
-            | b <= a' = LT
-            | b' <= a = GT
-            | otherwise = compareIntervals xs ys
-
