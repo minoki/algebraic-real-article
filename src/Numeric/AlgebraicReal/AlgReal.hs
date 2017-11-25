@@ -1,10 +1,12 @@
 {-# LANGUAGE BangPatterns #-}
 module Numeric.AlgebraicReal.AlgReal where
 import Numeric.AlgebraicReal.UniPoly
+import Numeric.AlgebraicReal.Resultant
 import Numeric.AlgebraicReal.Interval
 import Numeric.AlgebraicReal.CReal
 import qualified Data.Vector as V
 import Data.List
+import Data.Ratio
 
 data ExtReal a = NegativeInfinity
                | Finite !a
@@ -121,6 +123,9 @@ mkAlgReal f a b
           | otherwise = signAt b (diffP f')
         Just (Iv a' b') = find (\(Iv x y) -> 0 < x || y < 0) (intervalsWithSign f' s a b)
 
+mkAlgRealWithInterval :: UniPoly Rational -> Interval -> AlgReal
+mkAlgRealWithInterval f (Iv a b) = mkAlgReal f a b
+
 algRealToCReal :: AlgReal -> CReal
 algRealToCReal x = CReal (intervals x)
 
@@ -225,3 +230,123 @@ instance Ord AlgReal where
           g = gcdP f f'
           a'' = max a a'  -- x の区間と y の区間の共通部分の、下限
           b'' = min b b'  -- 同、上限
+
+-- | 与えられた無平方多項式と、その根に収束する計算可能実数から、代数的実数を構築する。
+mkAlgRealWithCReal :: UniPoly Rational -> CReal -> AlgReal
+mkAlgRealWithCReal f (CReal xs) = mkAlgRealWithInterval f (head $ dropWhile (\(Iv a b) -> countRealRootsBetween a b f >= 2) xs)
+
+instance Num AlgReal where
+  negate (FromRat x) = FromRat (negate x)
+  negate (AlgReal f s a b) = AlgReal (compP f (-ind)) (-s) (-b) (-a)
+
+  FromRat x + FromRat y = FromRat (x + y)
+  FromRat k + AlgReal f s a b = AlgReal (compP f (ind - constP k)) s (a + k) (b + k)
+  x@(AlgReal _ _ _ _) + y@(FromRat _) = y + x
+  x + y = mkAlgRealWithCReal (squareFree $ resultant_poly f_x_y g) (algRealToCReal x + algRealToCReal y)
+    where f = mapCoeff constP $ definingPolynomial x
+          f_x_y = compP f (constP ind - ind) -- f(x-y)
+          g = mapCoeff constP $ definingPolynomial y
+
+  FromRat x - FromRat y = FromRat (x - y)
+  FromRat k - AlgReal f s a b = AlgReal (compP f (constP k - ind)) (-s) (k - b) (k - a)
+  AlgReal f s a b - FromRat k = AlgReal (compP f (ind + constP k)) s (a - k) (b - k)
+  x - y = mkAlgRealWithCReal (squareFree $ resultant_poly f_x_y g) (algRealToCReal x - algRealToCReal y)
+    where f = mapCoeff constP $ definingPolynomial x
+          f_x_y = compP f (constP ind + ind) -- f(x+y)
+          g = mapCoeff constP $ definingPolynomial y
+
+  FromRat x * FromRat y = FromRat (x * y)
+  FromRat k * AlgReal f s a b
+    | k == 0 = 0
+    | k > 0 = AlgReal (compP f (scaleP (recip k) ind)) s (a * k) (b * k)
+    | k < 0 = AlgReal (compP f (scaleP (recip k) ind)) (-s) (b * k) (a * k)
+  x@(AlgReal _ _ _ _) * y@(FromRat _) = y * x
+  x * y = mkAlgRealWithCReal (squareFree $ resultant_poly y_f_x_y g) (algRealToCReal x * algRealToCReal y)
+    where f = definingPolynomial x
+          y_f_x_y = UniPoly $ V.reverse $ V.imap (\i a -> constP a * ind^i) $ coeff f -- y^n f(x/y)
+          g = mapCoeff constP $ definingPolynomial y
+
+  abs x | x >= 0 = x
+        | otherwise = negate x
+
+  signum x | x > 0 = 1
+           | x == 0 = 0
+           | x < 0 = -1
+
+  fromInteger n = FromRat (fromInteger n)
+
+instance Fractional AlgReal where
+  recip (FromRat x) = FromRat (recip x)
+  recip (AlgReal f s a b) = AlgReal (UniPoly $ V.reverse $ coeff f) s' (recip b) (recip a)
+    where s' | even (degree' f) || 0 < a = -s
+             | otherwise = s
+
+  fromRational = FromRat
+
+-- | Square root of a rational number
+sqrtQ :: Rational -> AlgReal
+sqrtQ a | a > 0 = case realRootsBetween (ind^2 - constP a) (Finite 0) PositiveInfinity of
+            [sqrt_a] -> sqrt_a
+            _ -> error "sqrt: none or multiple roots"
+        | a == 0 = 0
+        | otherwise = error "sqrt: negative"
+
+-- | Square root of an algebraic real number
+sqrtA :: AlgReal -> AlgReal
+sqrtA (FromRat x) = sqrtQ x
+sqrtA x = case filter (\y -> FromRat a < y^2 && y^2 <= FromRat b) $ realRootsBetween (compP f (ind^2)) (Finite 0) PositiveInfinity of
+                          [sqrtx] -> sqrtx
+                          r -> error $ "sqrt: none or multiple roots" ++ show r
+    where f = definingPolynomial x
+          (a,b) = isolatingInterval x
+
+-- | n-th root of a rational number
+nthRootQ :: Int -> Rational -> AlgReal
+nthRootQ !n !a
+  | n == 0 = error "0th root"
+  | n < 0  = nthRootQ (-n) (recip a)
+  | a > 0  = case realRootsBetween (ind^n - constP a) (Finite 0) PositiveInfinity of
+               [b] -> b
+               l -> error ("nthRoot: none or multiple roots " ++ show l)
+  | a == 0 = 0
+  | odd n  = case realRootsBetween (ind^n - constP a) NegativeInfinity (Finite 0) of
+               [b] -> b
+               l -> error ("nthRoot: none or multiple roots " ++ show l)
+  | otherwise = error "nthRoot: negative"
+
+-- | n-th root of an algebraic real number
+nthRootA :: Int -> AlgReal -> AlgReal
+nthRootA !n (FromRat x) = nthRootQ n x
+nthRootA !n x
+  | n == 0 = error "0th root"
+  | n < 0  = nthRootA (-n) (recip x)
+  -- now n must be positive
+  | x == 0 = 0
+  | x > 0  = case filter (\x -> FromRat a < x^n && x^n <= FromRat b) $ realRootsBetween (compP f (ind^n)) (Finite 0) PositiveInfinity of
+               [rx] -> rx
+               _ -> error "nthRoot: none or multiple roots"
+  -- x must be negative
+  | odd n  = case filter (\x -> FromRat a < x^n && x^n <= FromRat b) $ realRootsBetween (compP f (ind^n)) NegativeInfinity (Finite 0) of
+               [rx] -> rx
+               _ -> error "nthRoot: none or multiple roots"
+  | otherwise = error "nthRoot: negative"
+  where f = definingPolynomial x
+        (a,b) = isolatingInterval x
+
+-- | Compute the power of an algebraic real number to an integer
+powIntA :: AlgReal -> Int -> AlgReal
+powIntA _ 0 = 1
+powIntA x n | n < 0 = recip $ powIntA x (-n)
+powIntA (FromRat x) n = FromRat (x^n)
+powIntA x n = case (ind^n) `modP` f of
+                g -> valueAt x (mapCoeff FromRat g) -- x^n mod f(x) (ind^n `modP` f)
+  where f = definingPolynomial x
+
+powRatA :: AlgReal -> Rational -> AlgReal
+powRatA x y = nthRootA (fromInteger $ denominator y) (powIntA x (fromInteger $ numerator y))
+
+valueAtA :: AlgReal -> UniPoly Rational -> AlgReal
+valueAtA (FromRat x) f = FromRat (valueAt x f)
+valueAtA x f = case f `modP` g of
+                 h -> valueAt x (mapCoeff FromRat h)
+  where g = definingPolynomial x
