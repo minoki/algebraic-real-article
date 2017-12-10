@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 module Numeric.AlgebraicReal.AlgReal where
+import Numeric.AlgebraicReal.Class
 import Numeric.AlgebraicReal.UniPoly
 import Numeric.AlgebraicReal.Resultant
 import Numeric.AlgebraicReal.Interval
@@ -42,9 +43,21 @@ signAtX NegativeInfinity p
   | otherwise = sign (leadingCoefficient p) * (-1)^(degree' p)
 
 -- | Negative polynomial remainder sequence
-negativePRS :: (Eq a, Fractional a) => UniPoly a -> UniPoly a -> [UniPoly a]
-negativePRS f 0 = [f]
-negativePRS f g = let r = f `modP` g in f : negativePRS g (-r)
+negativePRS_f :: (Eq a, Fractional a) => UniPoly a -> UniPoly a -> [UniPoly a]
+negativePRS_f f 0 = [f]
+negativePRS_f f g = let r = f `modP` g in f : negativePRS_f g (-r)
+
+-- | Negative polynomial remainder sequence using subresultant PRS
+--
+-- Assumption: 'degree f > degree g'
+negativePRS :: (Ord a, IntegralDomain a) => UniPoly a -> UniPoly a -> [UniPoly a]
+negativePRS f g = f : g : loop 1 f 1 g (subresultantPRS' f g)
+  where
+    loop !_ _ !_ _ [] = []
+    loop !s f !t g ((b,x):xs)
+      -- b * (lc g)^(degree f - degree g + 1) * s > 0
+      | sign b * (sign $ leadingCoefficient g)^(degree' f - degree' g + 1) * s > 0 = -x : loop t g (-1) x xs
+      | otherwise = x : loop t g 1 x xs
 
 variance :: [Int] -> Int
 variance = loop 0
@@ -64,11 +77,11 @@ varianceAt x ys = variance $ map (signAt x) ys
 varianceAtX :: (Ord a, Num a) => ExtReal a -> [UniPoly a] -> Int
 varianceAtX x ys = variance $ map (signAtX x) ys
 
-countRealRootsBetween :: (Ord a, Fractional a) => a -> a -> UniPoly a -> Int
+countRealRootsBetween :: (Ord a, Fractional a, IntegralDomain a) => a -> a -> UniPoly a -> Int
 countRealRootsBetween a b f = varianceAt a s - varianceAt b s
   where s = negativePRS f (diffP f)
 
-countRealRootsBetweenX :: (Ord a, Fractional a) => ExtReal a -> ExtReal a -> UniPoly a -> Int
+countRealRootsBetweenX :: (Ord a, Fractional a, IntegralDomain a) => ExtReal a -> ExtReal a -> UniPoly a -> Int
 countRealRootsBetweenX a b f = varianceAtX a s - varianceAtX b s
   where s = negativePRS f (diffP f)
 

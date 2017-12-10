@@ -1,6 +1,9 @@
+{-# LANGUAGE BangPatterns #-}
 module Numeric.AlgebraicReal.UniPoly where
+import Numeric.AlgebraicReal.Class
 import qualified Data.Vector as V
 import Data.Vector ((!))
+import Data.Ratio
 
 -- 一変数多項式 (univariate polynomial)
 newtype UniPoly a = UniPoly (V.Vector a)
@@ -149,24 +152,56 @@ pseudoDivModP f g
 pseudoDivP f g = fst (pseudoDivModP f g)
 pseudoModP f g = snd (pseudoDivModP f g)
 
--- 整数係数多項式の内容を計算する
-content_int :: UniPoly Integer -> Integer
-content_int (UniPoly xs) = gcdV 0 xs -- 短絡評価を考えなければ foldr gcd 0 xs でも良い
-  where
-    -- foldl/foldr と gcd の組み合わせでは GCD が 1 になっても残りの部分が評価される。
-    -- 列の途中で GCD が 1 になれば全体の GCD は 1 で確定なので、そういう短絡評価する。
-    gcdV :: Integer -> V.Vector Integer -> Integer
-    gcdV 1 _ = 1
-    gcdV a v | V.null v = a
-             | otherwise = gcdV (gcd (V.last v) a) (V.init v)
+-- | 多項式の内容を計算する
+content :: (GCDDomain a) => UniPoly a -> a
+content (UniPoly xs) = contentV xs
 
--- 整数係数多項式の内容と原始部分を計算する
-contentAndPrimitivePart_int :: UniPoly Integer -> (Integer, UniPoly Integer)
-contentAndPrimitivePart_int f@(UniPoly xs)
+-- | 多項式の内容と原始部分を計算する
+contentAndPrimitivePart :: (Eq a, GCDDomain a) => UniPoly a -> (a, UniPoly a)
+contentAndPrimitivePart f@(UniPoly xs)
   | c == 1 = (c, f)
-  | otherwise = (c, UniPoly (V.map (`div` c) xs))
-  where c = content_int f
+  | otherwise = (c, UniPoly (V.map (`divide` c) xs))
+  where c = content f
 
--- 整数係数多項式の原始部分を計算する
-primitivePart_int :: UniPoly Integer -> UniPoly Integer
-primitivePart_int = snd . contentAndPrimitivePart_int
+-- | 多項式の原始部分を計算する
+primitivePart :: (Eq a, GCDDomain a) => UniPoly a -> UniPoly a
+primitivePart = snd . contentAndPrimitivePart
+
+instance (Eq a, IntegralDomain a) => IntegralDomain (UniPoly a) where
+  divide f g
+    | g == 0 = error "divide: divide by zero"
+    | degree f < degree g = zeroP -- f should be zero
+    | otherwise = loop zeroP f
+    where
+      l = degree' f - degree' g + 1
+      b = leadingCoefficient g
+      -- invariant: f == q * g + r
+      loop q r | degree r < degree g = q -- r should be zero
+               | otherwise = loop (q + mapCoeff (`divide` b) q') (scaleP b r - q' * g)
+        where q' = UniPoly (V.drop (degree' g) (coeff r))
+
+gcd_subresultantPRS :: (Eq a, IntegralDomain a) => UniPoly a -> UniPoly a -> UniPoly a
+gcd_subresultantPRS f 0 = f
+gcd_subresultantPRS f g = case pseudoModP f g of
+  0 -> g
+  rem -> let !d = degree' f - degree' g
+             !s = (-1)^(d + 1) * rem
+         in loop d (-1) g s
+  where
+    loop !_ _ f 0 = f
+    loop !d psi f g = case pseudoModP f g of
+      0 -> g
+      rem -> let !d' = degree' f - degree' g
+                 !c = leadingCoefficient f
+                 !psi' = ((-c)^d) `divide` (psi^(d-1))
+                 !beta = -c * psi' ^ d'
+                 !s = mapCoeff (`divide` beta) rem
+             in loop d' psi' g s
+
+instance (Eq a, GCDDomain a) => GCDDomain (UniPoly a) where
+  gcdD x y = let (xc,xp) = contentAndPrimitivePart x
+                 (yc,yp) = contentAndPrimitivePart y
+             in scaleP (gcdD xc yc) $ primitivePart (gcd_subresultantPRS xp yp)
+
+instance (Eq a, Fractional a, GCDDomain a) => EuclideanDomain (UniPoly a) where
+  divModD = divModP
