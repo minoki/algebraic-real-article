@@ -32,6 +32,12 @@ sign x = case compare x 0 of
 signAt :: (Ord a, Num a) => a -> UniPoly a -> Int
 signAt x p = sign (valueAt x p)
 
+signAtZQ :: Rational -> UniPoly Integer -> Int
+signAtZQ x p = sign (valueAtZQ x p)
+
+isZeroAtZQ :: Rational -> UniPoly Integer -> Bool
+isZeroAtZQ x p = valueAtZQ x p == 0
+
 -- | 指定した点における多項式の値の符号を返す（補完数直線版）
 signAtX :: (Ord a, Num a) => ExtReal a -> UniPoly a -> Int
 signAtX (Finite x) p = signAt x p
@@ -39,6 +45,15 @@ signAtX PositiveInfinity p
   | p == 0 = 0
   | otherwise = sign (leadingCoefficient p)
 signAtX NegativeInfinity p
+  | p == 0 = 0
+  | otherwise = sign (leadingCoefficient p) * (-1)^(degree' p)
+
+signAtZQX :: ExtReal Rational -> UniPoly Integer -> Int
+signAtZQX (Finite x) p = signAtZQ x p
+signAtZQX PositiveInfinity p
+  | p == 0 = 0
+  | otherwise = sign (leadingCoefficient p)
+signAtZQX NegativeInfinity p
   | p == 0 = 0
   | otherwise = sign (leadingCoefficient p) * (-1)^(degree' p)
 
@@ -77,6 +92,12 @@ varianceAt x ys = variance $ map (signAt x) ys
 varianceAtX :: (Ord a, Num a) => ExtReal a -> [UniPoly a] -> Int
 varianceAtX x ys = variance $ map (signAtX x) ys
 
+varianceAtZQ :: Rational -> [UniPoly Integer] -> Int
+varianceAtZQ x ys = variance $ map (signAtZQ x) ys
+
+varianceAtZQX :: ExtReal Rational -> [UniPoly Integer] -> Int
+varianceAtZQX x ys = variance $ map (signAtZQX x) ys
+
 countRealRootsBetween :: (Ord a, Fractional a, IntegralDomain a) => a -> a -> UniPoly a -> Int
 countRealRootsBetween a b f = varianceAt a s - varianceAt b s
   where s = negativePRS f (diffP f)
@@ -85,14 +106,22 @@ countRealRootsBetweenX :: (Ord a, Fractional a, IntegralDomain a) => ExtReal a -
 countRealRootsBetweenX a b f = varianceAtX a s - varianceAtX b s
   where s = negativePRS f (diffP f)
 
+countRealRootsBetweenZQ :: Rational -> Rational -> UniPoly Integer -> Int
+countRealRootsBetweenZQ a b f = varianceAtZQ a s - varianceAtZQ b s
+  where s = negativePRS f (diffP f)
+
+countRealRootsBetweenZQX :: ExtReal Rational -> ExtReal Rational -> UniPoly Integer -> Int
+countRealRootsBetweenZQX a b f = varianceAtZQX a s - varianceAtZQX b s
+  where s = negativePRS f (diffP f)
+
 -- | 代数的実数を表す型
 data AlgReal = FromRat !Rational
-             | AlgReal !(UniPoly Rational) !Int !Rational !Rational
+             | AlgReal !(UniPoly Integer) !Int !Rational !Rational
   deriving (Show)
 
 -- | 定義多項式
-definingPolynomial :: AlgReal -> UniPoly Rational
-definingPolynomial (FromRat x) = ind - constP x
+definingPolynomial :: AlgReal -> UniPoly Integer
+definingPolynomial (FromRat x) = fromCoeff (V.fromList [- numerator x, denominator x])
 definingPolynomial (AlgReal p _ _ _) = p
 
 -- | 実根の分離区間
@@ -101,12 +130,12 @@ isolatingInterval (FromRat x) = (x - 1, x + 1)
 isolatingInterval (AlgReal _ _ x y) = (x, y)
 
 -- s: この代数的実数における f' の符号（正なら区間 (a,b) において f は負から正に変わり、負なら区間 (a,b) において f は正から負に変わる）
-intervalsWithSign :: UniPoly Rational -> Int -> Rational -> Rational -> [Interval]
+intervalsWithSign :: UniPoly Integer -> Int -> Rational -> Rational -> [Interval]
 intervalsWithSign !f !s !a !b = Iv a b : ivs a b
   where
-    ivs !a !b | signAt c f == 0 = repeat (Iv c c)
-              | s * signAt c f < 0 = Iv c b : ivs c b
-              | s * signAt c f > 0 = Iv a c : ivs a c
+    ivs !a !b | signAtZQ c f == 0 = repeat (Iv c c)
+              | s * signAtZQ c f < 0 = Iv c b : ivs c b
+              | s * signAtZQ c f > 0 = Iv a c : ivs a c
       where c = (a + b) / 2
 
 -- | 近似する区間の列
@@ -115,7 +144,7 @@ intervals (FromRat x) = repeat (Iv x x)
 intervals (AlgReal f s a b) = intervalsWithSign f s a b
 
 -- | 与えられた定義多項式と、分離区間 (a,b] から、代数的実数を構築する。
-mkAlgReal :: UniPoly Rational -> Rational -> Rational -> AlgReal
+mkAlgReal :: UniPoly Integer -> Rational -> Rational -> AlgReal
 mkAlgReal f a b
   -- 0 の場合は FromRat 0 を使う
   | a < 0 && b >= 0 && valueAt 0 f == 0 = FromRat 0
@@ -124,37 +153,37 @@ mkAlgReal f a b
   | b <= a = error "mkAlgReal: empty range"
 
   -- 区間の端点で多項式の値が 0 でないようにする
-  | valueAt b' f' == 0 = FromRat b'
+  | isZeroAtZQ b' f' = FromRat b'
 
   -- 定数項の 0 を取り除き、また、区間の符号が確定したものをデータ構築子として使う
   | otherwise = AlgReal f' s a' b'
   where nonZeroPart xs | V.head xs == 0 = nonZeroPart (V.tail xs)
                        | otherwise = xs
         f' = UniPoly $ nonZeroPart (coeff f)
-        s | signAt b f' > 0 = 1
-          | signAt b f' < 0 = -1
-          | otherwise = signAt b (diffP f')
+        s | signAtZQ b f' > 0 = 1
+          | signAtZQ b f' < 0 = -1
+          | otherwise = signAtZQ b (diffP f')
         Just (Iv a' b') = find (\(Iv x y) -> 0 < x || y < 0) (intervalsWithSign f' s a b)
 
-mkAlgRealWithInterval :: UniPoly Rational -> Interval -> AlgReal
+mkAlgRealWithInterval :: UniPoly Integer -> Interval -> AlgReal
 mkAlgRealWithInterval f (Iv a b) = mkAlgReal f a b
 
 algRealToCReal :: AlgReal -> CReal
 algRealToCReal x = CReal (intervals x)
 
-rootBound :: (Ord a, Fractional a) => UniPoly a -> a
+rootBound :: UniPoly Integer -> Rational
 rootBound f | f == 0 = error "rootBound: polynomial is zero"
-            | otherwise = 1 + (V.maximum $ V.map (abs . (/ lc)) $ V.init $ coeff f)
+            | otherwise = 1 + (V.maximum $ V.map (abs . (% lc)) $ V.init $ coeff f)
   where lc = leadingCoefficient f
 
-realRoots :: UniPoly Rational -> [AlgReal]
+realRoots :: UniPoly Integer -> [AlgReal]
 realRoots f = realRootsBetween f NegativeInfinity PositiveInfinity
 
-realRootsBetween :: UniPoly Rational -> ExtReal Rational -> ExtReal Rational -> [AlgReal]
+realRootsBetween :: UniPoly Integer -> ExtReal Rational -> ExtReal Rational -> [AlgReal]
 realRootsBetween f lb ub
   | f == 0 = error "realRoots: zero" -- 多項式 0 の実根を求めようとするのはエラー
   | degree' f == 0 = []                 -- 多項式が 0 でない定数の場合、実根はない
-  | otherwise = bisect (lb',varianceAtX lb seq) (ub',varianceAtX ub seq)
+  | otherwise = bisect (lb',varianceAtZQX lb seq) (ub',varianceAtZQX ub seq)
   where
     f' = squareFree f               -- 無平方多項式に直す
     seq = negativePRS f' (diffP f') -- f' のスツルム列
@@ -169,7 +198,15 @@ realRootsBetween f lb ub
       | i == j + 1 = [mkAlgReal f a b]        -- 区間にちょうど一個の実根が存在する場合
       | otherwise  = bisect p r ++ bisect r q -- それ以外：複数個の実根が存在するので区間を分割する
       where c = (a + b) / 2
-            r = (c,varianceAt c seq)
+            r = (c,varianceAtZQ c seq)
+
+realRootsBetweenQ :: UniPoly Rational -> ExtReal Rational -> ExtReal Rational -> [AlgReal]
+realRootsBetweenQ f lb ub
+  | f == 0 = error "realRoots: zero"
+  | degree' f == 0 = []
+  | otherwise = let commonDenominator = V.foldl' (\a b -> lcm a (denominator b)) 1 (coeff f)
+                    fz = primitivePart $ mapCoeff (\x -> numerator x * (commonDenominator `div` denominator x)) f
+                in realRootsBetween fz lb ub
 
 instance Eq AlgReal where
   -- 有理数同士は普通に比較
@@ -178,14 +215,14 @@ instance Eq AlgReal where
   -- 有理数と代数的実数。後者が有理数である可能性は排除されていないので、愚直にチェックする。
   FromRat x == y
     | x <= a || b <= x = False      -- 区間の中にない場合
-    | otherwise = valueAt x f == 0  -- 定義多項式に代入して0になれば等しい
+    | otherwise = isZeroAtZQ x f    -- 定義多項式に代入して0になれば等しい
     where f = definingPolynomial y
           (a,b) = isolatingInterval y
 
   -- 同様
   x == FromRat y
     | y <= a || b <= y = False      -- 区間の中にない場合
-    | otherwise = valueAt y f == 0  -- 定義多項式に代入して0になれば等しい
+    | otherwise = isZeroAtZQ y f    -- 定義多項式に代入して0になれば等しい
     where f = definingPolynomial x
           (a,b) = isolatingInterval x
 
@@ -193,12 +230,12 @@ instance Eq AlgReal where
   x == y
     | b  <= a' = False  -- 区間が重なっていない場合1
     | b' <= a  = False  -- 区間が重なっていない場合2
-    | otherwise = countRealRootsBetween a'' b'' g == 1
+    | otherwise = countRealRootsBetweenZQ a'' b'' g == 1
     where f = definingPolynomial x
           (a,b) = isolatingInterval x
           f' = definingPolynomial y
           (a',b') = isolatingInterval y
-          g = gcdP f f'
+          g = gcdD f f'
           a'' = max a a'
           b'' = min b b'
 
@@ -210,8 +247,8 @@ instance Ord AlgReal where
   compare (FromRat x) y
     | x <= a = LT
     | b <= x = GT
-    | countRealRootsBetween x b f == 1 = LT
-    | valueAt x f == 0 = EQ
+    | countRealRootsBetweenZQ x b f == 1 = LT
+    | isZeroAtZQ x f = EQ
     | otherwise = GT
     where f = definingPolynomial y
           (a,b) = isolatingInterval y
@@ -220,8 +257,8 @@ instance Ord AlgReal where
   compare x (FromRat y)
     | y <= a = GT
     | b <= y = LT
-    | countRealRootsBetween y b f == 1 = GT
-    | valueAt y f == 0 = EQ
+    | countRealRootsBetweenZQ y b f == 1 = GT
+    | isZeroAtZQ y f = EQ
     | otherwise = LT
     where f = definingPolynomial x
           (a,b) = isolatingInterval x
@@ -231,7 +268,7 @@ instance Ord AlgReal where
     | b  <= a' = LT -- 区間が重なっていない場合1（y の方が大きい）
     | b' <= a  = GT -- 区間が重なっていない場合2（x の方が大きい）
 
-    | countRealRootsBetween a'' b'' g == 1 = EQ -- 等しいかどうか？
+    | countRealRootsBetweenZQ a'' b'' g == 1 = EQ -- 等しいかどうか？
 
     -- x と y が等しくないことが確定した場合、縮小する区間の列を使って比較する（計算可能実数みたいな感じ）
     | otherwise = unsafeCompareCReal (algRealToCReal x) (algRealToCReal y)
@@ -240,20 +277,20 @@ instance Ord AlgReal where
           (a,b) = isolatingInterval x    -- x の区間
           f' = definingPolynomial y      -- y の定義多項式
           (a',b') = isolatingInterval y  -- y の区間
-          g = gcdP f f'
+          g = gcdD f f'
           a'' = max a a'  -- x の区間と y の区間の共通部分の、下限
           b'' = min b b'  -- 同、上限
 
 -- | 与えられた無平方多項式と、その根に収束する計算可能実数から、代数的実数を構築する。
-mkAlgRealWithCReal :: UniPoly Rational -> CReal -> AlgReal
-mkAlgRealWithCReal f (CReal xs) = mkAlgRealWithInterval f (head $ dropWhile (\(Iv a b) -> countRealRootsBetween a b f >= 2) xs)
+mkAlgRealWithCReal :: UniPoly Integer -> CReal -> AlgReal
+mkAlgRealWithCReal f (CReal xs) = mkAlgRealWithInterval f (head $ dropWhile (\(Iv a b) -> countRealRootsBetweenZQ a b f >= 2) xs)
 
 instance Num AlgReal where
   negate (FromRat x) = FromRat (negate x)
   negate (AlgReal f s a b) = AlgReal (compP f (-ind)) (-s) (-b) (-a)
 
   FromRat x + FromRat y = FromRat (x + y)
-  FromRat k + AlgReal f s a b = AlgReal (compP f (ind - constP k)) s (a + k) (b + k)
+  FromRat k + AlgReal f s a b = AlgReal (compP f (definingPolynomial (FromRat k))) s (a + k) (b + k)
   x@(AlgReal _ _ _ _) + y@(FromRat _) = y + x
   x + y = mkAlgRealWithCReal (squareFree $ resultant_poly f_x_y g) (algRealToCReal x + algRealToCReal y)
     where f = mapCoeff constP $ definingPolynomial x
@@ -261,8 +298,8 @@ instance Num AlgReal where
           g = mapCoeff constP $ definingPolynomial y
 
   FromRat x - FromRat y = FromRat (x - y)
-  FromRat k - AlgReal f s a b = AlgReal (compP f (constP k - ind)) (-s) (k - b) (k - a)
-  AlgReal f s a b - FromRat k = AlgReal (compP f (ind + constP k)) s (a - k) (b - k)
+  FromRat k - AlgReal f s a b = AlgReal (compP f (definingPolynomial (FromRat k))) (-s) (k - b) (k - a)
+  AlgReal f s a b - FromRat k = AlgReal (compP f (definingPolynomial (FromRat (-k)))) s (a - k) (b - k)
   x - y = mkAlgRealWithCReal (squareFree $ resultant_poly f_x_y g) (algRealToCReal x - algRealToCReal y)
     where f = mapCoeff constP $ definingPolynomial x
           f_x_y = compP f (constP ind + ind) -- f(x+y)
@@ -271,8 +308,10 @@ instance Num AlgReal where
   FromRat x * FromRat y = FromRat (x * y)
   FromRat k * AlgReal f s a b
     | k == 0 = 0
-    | k > 0 = AlgReal (compP f (scaleP (recip k) ind)) s (a * k) (b * k)
-    | k < 0 = AlgReal (compP f (scaleP (recip k) ind)) (-s) (b * k) (a * k)
+    | k > 0 = AlgReal f_x_k s (a * k) (b * k)
+    | k < 0 = AlgReal f_x_k (-s) (b * k) (a * k)
+    where f_x_k = fst $ homogeneousValueAt (scaleP (denominator k) ind) (fromInteger $ numerator k) (mapCoeff fromInteger f) -- f(x/k)
+
   x@(AlgReal _ _ _ _) * y@(FromRat _) = y * x
   x * y = mkAlgRealWithCReal (squareFree $ resultant_poly y_f_x_y g) (algRealToCReal x * algRealToCReal y)
     where f = definingPolynomial x
@@ -298,7 +337,7 @@ instance Fractional AlgReal where
 
 -- | Square root of a rational number
 sqrtQ :: Rational -> AlgReal
-sqrtQ a | a > 0 = case realRootsBetween (ind^2 - constP a) (Finite 0) PositiveInfinity of
+sqrtQ a | a > 0 = case realRootsBetweenQ (ind^2 - constP a) (Finite 0) PositiveInfinity of
             [sqrt_a] -> sqrt_a
             _ -> error "sqrt: none or multiple roots"
         | a == 0 = 0
@@ -318,11 +357,11 @@ nthRootQ :: Int -> Rational -> AlgReal
 nthRootQ !n !a
   | n == 0 = error "0th root"
   | n < 0  = nthRootQ (-n) (recip a)
-  | a > 0  = case realRootsBetween (ind^n - constP a) (Finite 0) PositiveInfinity of
+  | a > 0  = case realRootsBetweenQ (ind^n - constP a) (Finite 0) PositiveInfinity of
                [b] -> b
                l -> error ("nthRoot: none or multiple roots " ++ show l)
   | a == 0 = 0
-  | odd n  = case realRootsBetween (ind^n - constP a) NegativeInfinity (Finite 0) of
+  | odd n  = case realRootsBetweenQ (ind^n - constP a) NegativeInfinity (Finite 0) of
                [b] -> b
                l -> error ("nthRoot: none or multiple roots " ++ show l)
   | otherwise = error "nthRoot: negative"
@@ -353,7 +392,7 @@ powIntA x n | n < 0 = recip $ powIntA x (-n)
 powIntA (FromRat x) n = FromRat (x^n)
 powIntA x n = case (ind^n) `modP` f of
                 g -> valueAt x (mapCoeff FromRat g) -- x^n mod f(x) (ind^n `modP` f)
-  where f = definingPolynomial x
+  where f = mapCoeff fromInteger $ definingPolynomial x :: UniPoly Rational
 
 powRatA :: AlgReal -> Rational -> AlgReal
 powRatA x y = nthRootA (fromInteger $ denominator y) (powIntA x (fromInteger $ numerator y))
@@ -362,4 +401,4 @@ valueAtA :: AlgReal -> UniPoly Rational -> AlgReal
 valueAtA (FromRat x) f = FromRat (valueAt x f)
 valueAtA x f = case f `modP` g of
                  h -> valueAt x (mapCoeff FromRat h)
-  where g = definingPolynomial x
+  where g = mapCoeff fromInteger $ definingPolynomial x :: UniPoly Rational

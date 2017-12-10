@@ -98,6 +98,19 @@ scaleP a (UniPoly xs)
 valueAt :: (Num a) => a -> UniPoly a -> a
 valueAt t (UniPoly xs) = V.foldr' (\a b -> a + t * b) 0 xs
 
+valueAtZQ :: Rational -> UniPoly Integer -> Rational
+valueAtZQ t (UniPoly xs) = V.foldr' (\a b -> fromInteger a + t * b) 0 xs
+
+-- homogeneousValueAt x y (a_n X^n + ... + a_1 X + a_0)
+-- = (a_n x^n + a_{n-1} x^{n-1} y + ... + a_1 x y^{n-1} + a_0 y^n, y^n)
+homogeneousValueAt :: (Eq a, Num a) => a -> a -> UniPoly a -> (a, a)
+homogeneousValueAt num den f@(UniPoly coeff)
+  | f == 0 = (0, 1)
+  | otherwise = (V.foldr' (\x y -> x + num * y) 0 $ V.zipWith (*) coeff denseq, V.head denseq)
+  where
+    -- numseq = V.iterateN (V.length coeff) (* num) 1
+    denseq = V.reverse (V.iterateN (V.length coeff) (* den) 1)
+
 -- 'f `compP` g = f(g(x))'
 compP :: (Eq a, Num a) => UniPoly a -> UniPoly a -> UniPoly a
 compP (UniPoly xs) g = V.foldr' (\a b -> constP a + g * b) 0 xs
@@ -132,8 +145,8 @@ diffP (UniPoly xs)
   | null xs = zeroP
   | otherwise = fromCoeff $ V.tail $ V.imap (\i x -> fromIntegral i * x) xs
 
-squareFree :: (Eq a, Fractional a) => UniPoly a -> UniPoly a
-squareFree f = f `divP` gcdP f (diffP f)
+squareFree :: (Eq a, GCDDomain a) => UniPoly a -> UniPoly a
+squareFree f = f `divide` gcdD f (diffP f)
 
 pseudoDivModP :: (Eq a, Num a) => UniPoly a -> UniPoly a -> (UniPoly a, UniPoly a)
 pseudoDivModP f g
