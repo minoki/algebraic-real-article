@@ -95,6 +95,10 @@ scaleP a (UniPoly xs)
   | a == 0 = zeroP
   | otherwise = UniPoly $ V.map (* a) xs
 
+-- division by scalar
+unscaleP :: (Eq a, IntegralDomain a) => a -> UniPoly a -> UniPoly a
+unscaleP a f = mapCoeff (`divide` a) f
+
 valueAt :: (Num a) => a -> UniPoly a -> a
 valueAt t (UniPoly xs) = V.foldr' (\a b -> a + t * b) 0 xs
 
@@ -208,7 +212,7 @@ gcd_subresultantPRS f g = case pseudoModP f g of
                  !c = leadingCoefficient f
                  !psi' = ((-c)^d) `divide` (psi^(d-1))
                  !beta = -c * psi' ^ d'
-                 !s = mapCoeff (`divide` beta) rem
+                 !s = unscaleP beta rem
              in loop d' psi' g s
 
 instance (Eq a, GCDDomain a) => GCDDomain (UniPoly a) where

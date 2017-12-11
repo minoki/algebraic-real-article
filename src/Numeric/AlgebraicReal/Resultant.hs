@@ -64,7 +64,7 @@ reducedPRS f g = case pseudoModP f g of
       0 -> []
       rem -> let !deg_f = degree' f
                  !beta = leadingCoefficient f ^ (deg_h - deg_f + 1)
-                 !mr = mapCoeff (`divide` beta) rem
+                 !mr = unscaleP beta rem
              in mr : loop deg_f g mr
 
 subresultantPRS :: (Eq a, IntegralDomain a) => UniPoly a -> UniPoly a -> [UniPoly a]
@@ -82,7 +82,7 @@ subresultantPRS f g = case pseudoModP f g of
                  !c = leadingCoefficient f
                  !psi' = (-c)^d `divide` psi^(d-1)
                  !beta = -c * psi' ^ d'
-                 !s = mapCoeff (`divide` beta) rem
+                 !s = unscaleP beta rem
              in s : loop d' psi' g s
 
 -- subresultantPRS' f g = (b,r) : subresultantPRS' g r
@@ -102,5 +102,5 @@ subresultantPRS' f g = case pseudoModP f g of
                  !c = leadingCoefficient f
                  !psi' = (-c)^d `divide` psi^(d-1)
                  !beta = -c * psi' ^ d'
-                 !s = mapCoeff (`divide` beta) rem
+                 !s = unscaleP beta rem
              in (beta,s) : loop d' psi' g s
