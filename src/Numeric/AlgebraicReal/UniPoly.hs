@@ -194,8 +194,8 @@ instance (Eq a, IntegralDomain a) => IntegralDomain (UniPoly a) where
       b = leadingCoefficient g
       -- invariant: f == q * g + r
       loop q r | degree r < degree g = q -- r should be zero
-               | otherwise = loop (q + mapCoeff (`divide` b) q') (scaleP b r - q' * g)
-        where q' = UniPoly (V.drop (degree' g) (coeff r))
+               | otherwise = loop (q + q') (r - q' * g)
+        where q' = unscaleP b (UniPoly (V.drop (degree' g) (coeff r)))
 
 gcd_subresultantPRS :: (Eq a, IntegralDomain a) => UniPoly a -> UniPoly a -> UniPoly a
 gcd_subresultantPRS f 0 = f
