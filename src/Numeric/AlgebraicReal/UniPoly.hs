@@ -175,9 +175,9 @@ content (UniPoly xs) = contentV xs
 
 -- | 多項式の内容と原始部分を計算する
 contentAndPrimitivePart :: (Eq a, GCDDomain a) => UniPoly a -> (a, UniPoly a)
-contentAndPrimitivePart f@(UniPoly xs)
+contentAndPrimitivePart f
   | c == 1 = (c, f)
-  | otherwise = (c, UniPoly (V.map (`divide` c) xs))
+  | otherwise = (c, unscaleP c f)
   where c = content f
 
 -- | 多項式の原始部分を計算する
