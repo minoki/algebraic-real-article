@@ -49,7 +49,9 @@ instance (Integral a) => GCDDomain (Ratio a) where
 
 instance GCDDomain Integer where
   gcdD = gcd
-  contentV = gcdV 0 -- 短絡評価を考えなければ foldr gcd 0 xs でも良い
+  contentV xs | V.null xs = 0
+              | V.last xs < 0 = negate (gcdV 0 xs) -- 内容の符号に、最高次の係数の符号を反映させる
+              | otherwise = gcdV 0 xs -- 短絡評価を考えなければ foldr gcd 0 でも良い
     where
       -- foldl/foldr と gcd の組み合わせでは GCD が 1 になっても残りの部分が評価される。
       -- 列の途中で GCD が 1 になれば全体の GCD は 1 で確定なので、そういう短絡評価する。
