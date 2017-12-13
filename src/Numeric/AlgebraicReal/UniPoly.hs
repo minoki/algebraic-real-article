@@ -199,11 +199,13 @@ instance (Eq a, IntegralDomain a) => IntegralDomain (UniPoly a) where
 
 gcd_subresultantPRS :: (Eq a, IntegralDomain a) => UniPoly a -> UniPoly a -> UniPoly a
 gcd_subresultantPRS f 0 = f
-gcd_subresultantPRS f g = case pseudoModP f g of
-  0 -> g
-  rem -> let !d = degree' f - degree' g
-             !s = (-1)^(d + 1) * rem
-         in loop d (-1) g s
+gcd_subresultantPRS f g
+  | degree f < degree g = gcd_subresultantPRS g f
+  | otherwise = case pseudoModP f g of
+      0 -> g
+      rem -> let !d = degree' f - degree' g
+                 !s = (-1)^(d + 1) * rem
+             in loop d (-1) g s
   where
     loop !_ _ f 0 = f
     loop !d psi f g = case pseudoModP f g of
