@@ -335,6 +335,13 @@ instance Fractional AlgReal where
 
   fromRational = FromRat
 
+instance IntegralDomain AlgReal where
+  divide = (/)
+
+instance GCDDomain AlgReal where
+  gcdD = fieldGcd
+  contentV = fieldContentV
+
 -- | Square root of a rational number
 sqrtQ :: Rational -> AlgReal
 sqrtQ a | a > 0 = case realRootsBetweenQ (ind^2 - constP a) (Finite 0) PositiveInfinity of
