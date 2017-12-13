@@ -40,12 +40,19 @@ instance (Integral a) => IntegralDomain (Ratio a) where
 instance IntegralDomain Integer where
   divide = div
 
+-- | 体の場合の gcdD 関数のデフォルト実装
+fieldGcd :: (Eq a, Fractional a) => a -> a -> a
+fieldGcd 0 0 = 0
+fieldGcd _ _ = 1
+
+-- | 体の場合の contentV 関数のデフォルト実装
+fieldContentV :: (Eq a, Fractional a) => V.Vector a -> a
+fieldContentV xs | V.null xs = 0
+                 | otherwise = V.last xs
 
 instance (Integral a) => GCDDomain (Ratio a) where
-  gcdD 0 0 = 0
-  gcdD _ _ = 1
-  contentV xs | V.null xs = 0
-              | otherwise = V.last xs
+  gcdD = fieldGcd
+  contentV = fieldContentV
 
 instance GCDDomain Integer where
   gcdD = gcd
