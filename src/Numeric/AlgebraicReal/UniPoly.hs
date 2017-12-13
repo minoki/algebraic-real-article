@@ -221,6 +221,13 @@ instance (Eq a, GCDDomain a) => GCDDomain (UniPoly a) where
   gcdD x y = let (xc,xp) = contentAndPrimitivePart x
                  (yc,yp) = contentAndPrimitivePart y
              in scaleP (gcdD xc yc) $ primitivePart (gcd_subresultantPRS xp yp)
+  contentV xs | V.null xs = 0
+              | otherwise = scaleP (contentV (V.map fst ys)) $ gcdV 0 (V.map snd ys)
+    where
+      ys = V.map contentAndPrimitivePart xs
+      gcdV 1 _ = 1
+      gcdV a v | V.null v = a
+               | otherwise = gcdV (primitivePart $ gcd_subresultantPRS (V.last v) a) (V.init v)
 
 instance (Eq a, Fractional a, GCDDomain a) => EuclideanDomain (UniPoly a) where
   divModD = divModP
