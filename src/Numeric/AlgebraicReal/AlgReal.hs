@@ -290,7 +290,7 @@ instance Num AlgReal where
   negate (AlgReal f s a b) = AlgReal (compP f (-ind)) (-s) (-b) (-a)
 
   FromRat x + FromRat y = FromRat (x + y)
-  FromRat k + AlgReal f s a b = AlgReal (compP f (definingPolynomial (FromRat k))) s (a + k) (b + k)
+  FromRat k + AlgReal f s a b = mkAlgReal (compP f (definingPolynomial (FromRat k))) (a + k) (b + k)
   x@(AlgReal _ _ _ _) + y@(FromRat _) = y + x
   x + y = mkAlgRealWithCReal (squareFree $ resultant_poly f_x_y g) (algRealToCReal x + algRealToCReal y)
     where f = mapCoeff constP $ definingPolynomial x
@@ -298,8 +298,8 @@ instance Num AlgReal where
           g = mapCoeff constP $ definingPolynomial y
 
   FromRat x - FromRat y = FromRat (x - y)
-  FromRat k - AlgReal f s a b = AlgReal (compP f (definingPolynomial (FromRat k))) (-s) (k - b) (k - a)
-  AlgReal f s a b - FromRat k = AlgReal (compP f (definingPolynomial (FromRat (-k)))) s (a - k) (b - k)
+  FromRat k - AlgReal f s a b = mkAlgReal (compP f (- definingPolynomial (FromRat k))) (k - b) (k - a)
+  AlgReal f s a b - FromRat k = mkAlgReal (compP f (definingPolynomial (FromRat (-k)))) (a - k) (b - k)
   x - y = mkAlgRealWithCReal (squareFree $ resultant_poly f_x_y g) (algRealToCReal x - algRealToCReal y)
     where f = mapCoeff constP $ definingPolynomial x
           f_x_y = compP f (constP ind + ind) -- f(x+y)
