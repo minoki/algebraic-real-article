@@ -21,6 +21,8 @@ library
                      , Numeric.AlgebraicReal.Interval
                      , Numeric.AlgebraicReal.CReal
                      , Numeric.AlgebraicReal.Class
+                     , Numeric.AlgebraicReal.Factor.Kronecker
+                     , Numeric.AlgebraicReal.Factor.SquareFree
   build-depends:       base >= 4.7 && < 5
                      , vector
   default-language:    Haskell2010
