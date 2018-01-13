@@ -29,11 +29,7 @@ distinctDegreeFactorization f = loop 1 ind f
         q = order (leadingCoefficient f)
 
 randomPolyOfDegreeLessThan :: (Eq k, Num k, Random k, RandomGen g) => Int -> g -> (UniPoly k, g)
-randomPolyOfDegreeLessThan n g = case takeR n [] g of
-                                   (xs,g) -> (fromCoeff (V.fromList xs), g)
-  where takeR 0 acc g = (acc,g)
-        takeR n acc g = case random g of
-                          (a,g) -> takeR (n-1) (a:acc) g
+randomPolyOfDegreeLessThan n = runState $ fmap (fromCoeff . V.fromList) $ sequence $ replicate n $ state random
 
 -- Input: nonzero, monic, squarefree, equal-degree, reducible
 equalDegreeFactorizationOne :: (FiniteField k, Eq k, Random k, RandomGen g) => Int -> UniPoly k -> g -> (Maybe (UniPoly k), g)
