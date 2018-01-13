@@ -10,11 +10,11 @@ import Numeric.AlgebraicReal.UniPoly
 
 powMod :: (Eq k, Fractional k) => UniPoly k -> Integer -> UniPoly k -> UniPoly k
 powMod _ 0 _ = 1
-powMod a n m = loop a (n-1) a
+powMod a n m = let a' = a `modP` m in loop a' (n-1) a'
   where loop a 0 acc = acc
         loop a n acc = case n `quotRem` 2 of
-          (n',0) -> loop (a * a `modP` m) n' acc
-          (n',1) -> loop (a * a `modP` m) n' (acc * a `modP` m)
+          (n',0) -> loop ((a * a) `modP` m) n' acc
+          (n',1) -> loop ((a * a) `modP` m) n' ((acc * a) `modP` m)
 
 -- Input: nonzero, monic, squarefree
 distinctDegreeFactorization :: (FiniteField k, Eq k) => UniPoly k -> [(Int,UniPoly k)]
