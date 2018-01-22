@@ -2,7 +2,6 @@
 module Numeric.AlgebraicReal.Factor.SquareFree where
 import Numeric.AlgebraicReal.Class
 import Numeric.AlgebraicReal.UniPoly
-import qualified Data.Vector as V
 
 -- naive implementation of squarefree factorization
 -- >>> squareFreeFactorization ((ind + 1)^2 :: UniPoly Rational)

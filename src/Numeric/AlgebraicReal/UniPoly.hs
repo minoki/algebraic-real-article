@@ -3,7 +3,6 @@ module Numeric.AlgebraicReal.UniPoly where
 import Numeric.AlgebraicReal.Class
 import qualified Data.Vector as V
 import Data.Vector ((!))
-import Data.Ratio
 
 -- 一変数多項式 (univariate polynomial)
 newtype UniPoly a = UniPoly (V.Vector a)
@@ -34,6 +33,9 @@ fromCoeff xs
   | V.null xs      = zeroP
   | V.last xs == 0 = fromCoeff (V.init xs)
   | otherwise      = UniPoly xs
+
+fromCoeffList :: (Eq a, Num a) => [a] -> UniPoly a
+fromCoeffList = fromCoeff . V.fromList
 
 mapCoeff :: (Eq b, Num b) => (a -> b) -> UniPoly a -> UniPoly b
 mapCoeff f = fromCoeff . fmap f . coeff
@@ -104,6 +106,9 @@ valueAt t (UniPoly xs) = V.foldr' (\a b -> a + t * b) 0 xs
 
 valueAtZQ :: Rational -> UniPoly Integer -> Rational
 valueAtZQ t (UniPoly xs) = V.foldr' (\a b -> fromInteger a + t * b) 0 xs
+
+valueAtZ :: (Num a) => a -> UniPoly Integer -> a
+valueAtZ t (UniPoly xs) = V.foldr' (\a b -> fromInteger a + t * b) 0 xs
 
 -- homogeneousValueAt x y (a_n X^n + ... + a_1 X + a_0)
 -- = (a_n x^n + a_{n-1} x^{n-1} y + ... + a_1 x y^{n-1} + a_0 y^n, y^n)

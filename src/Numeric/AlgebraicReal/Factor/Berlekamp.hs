@@ -3,7 +3,6 @@ import Prelude hiding (toInteger)
 import Data.FiniteField
 import System.Random
 import qualified Data.Vector as V
-import Control.Monad
 import Control.Monad.State
 import Data.Array
 import Data.List
