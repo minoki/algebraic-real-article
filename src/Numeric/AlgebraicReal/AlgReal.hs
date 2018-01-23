@@ -200,7 +200,7 @@ realRootsBetweenM f lb ub
   | f == 0 = error "realRoots: zero" -- 多項式 0 の実根を求めようとするのはエラー
   | degree' f == 0 = []              -- 多項式が 0 でない定数の場合、実根はない
   | otherwise = sortOn fst $ do
-      (g,i) <- yun f                       -- f を無平方分解する
+      (g,i) <- yun (primitivePart f)       -- f を無平方分解する
       h <- unsafePerformIO (factorIntIO g) -- g を因数分解する
       let seq = negativePRS h (diffP h)    -- h のスツルム列
           bound = rootBound h              -- 根の限界
