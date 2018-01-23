@@ -169,13 +169,18 @@ mkAlgRealWithCReal :: UniPoly Integer -> CReal -> AlgReal
 mkAlgRealWithCReal f (CReal xs) = sieve squareFreeFactors xs
   where
     squareFreeFactors :: [UniPoly Integer]
-    squareFreeFactors = concatMap (\(g,_) -> unsafePerformIO (factorIntIO g)) $ yun $ primitivePart f
+    squareFreeFactors = map fst $ yun $ primitivePart f
 
     sieve :: [UniPoly Integer] -> [Interval] -> AlgReal
     sieve [] _ = error "invalid real number"
-    sieve [g] xs = case dropWhile (\(Iv a b) -> countRealRootsBetweenZQ a b g >= 2) xs of
-                     Iv a b : _ -> mkAlgRealWithIrreduciblePoly g a b
+    sieve [g] xs = sieve2 (unsafePerformIO (factorIntIO g)) xs
     sieve gs (x@(Iv a b):xs) = sieve (filter (\g -> isCompatibleWithZero (valueAtZ x g)) gs) xs
+
+    sieve2 :: [UniPoly Integer] -> [Interval] -> AlgReal
+    sieve2 [] _ = error "invalid real number"
+    sieve2 [g] xs = case dropWhile (\(Iv a b) -> countRealRootsBetweenZQ a b g >= 2) xs of
+                      Iv a b : _ -> mkAlgRealWithIrreduciblePoly g a b
+    sieve2 gs (x@(Iv a b):xs) = sieve2 (filter (\g -> isCompatibleWithZero (valueAtZ x g)) gs) xs
 
     isCompatibleWithZero :: Interval -> Bool
     isCompatibleWithZero (Iv a b) = a <= 0 && 0 <= b
